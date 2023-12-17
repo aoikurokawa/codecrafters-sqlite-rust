@@ -1,28 +1,22 @@
 use crate::database::DbHeader;
 
 #[derive(Debug, Clone)]
-pub struct BTreePage {
-    db_header: Option<DbHeader>,
+pub struct Page {
+    pub(crate) db_header: Option<DbHeader>,
     pub(crate) btree_header: BTreePageHeader,
+    pub(crate) buffer: Vec<u8>,
 }
 
-impl BTreePage {
-    pub fn new(db_header: Option<DbHeader>, btree_header: BTreePageHeader) -> Self {
-        Self {
-            db_header,
-            btree_header,
-        }
-    }
-}
+impl Page {}
 
 #[derive(Debug, Clone)]
 pub struct BTreePageHeader {
     /// The one-byte flag at offset 0 indicating the b-tree page type
     page_type: PageType,
 
-    first_freeblock: u16,
+    freeblock_offset: u16,
     pub(crate) ncells: u16,
-    cell_content_area: u16,
+    cells_start: u16,
     nfragemented_free: u8,
     right_most_pointer: u32,
 }
@@ -33,9 +27,9 @@ impl BTreePageHeader {
 
         Ok(Self {
             page_type,
-            first_freeblock: u16::from_be_bytes([header[1], header[2]]),
+            freeblock_offset: u16::from_be_bytes([header[1], header[2]]),
             ncells: u16::from_be_bytes([header[3], header[4]]),
-            cell_content_area: u16::from_be_bytes([header[5], header[6]]),
+            cells_start: u16::from_be_bytes([header[5], header[6]]),
             nfragemented_free: u8::from_be_bytes([header[7]]),
             right_most_pointer: u32::from_be_bytes([header[8], header[9], header[10], header[11]]),
         })

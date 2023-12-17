@@ -1,35 +1,44 @@
 use std::{fs, path::Path};
 
-use crate::page::{BTreePage, BTreePageHeader};
+use crate::page::{BTreePageHeader, Page};
 
 #[derive(Debug, Clone)]
 pub struct Database {
     /// The first 100 bytes of the database file comprise the database file header.
     header: DbHeader,
-    pages: Vec<BTreePage>,
+    pages: Vec<Page>,
 }
 
 impl Database {
     pub fn read_file(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let file = fs::read(path)?;
 
-        let header = DbHeader::new(&file[0..100])?;
-        assert_eq!(file[100..].len() % header.page_size, 0);
+        let (header, _rest) = file.split_at(100);
+        let header = DbHeader::new(header)?;
+        assert_eq!(file.len() % header.page_size, 0);
 
-        let mut pages = Vec::new();
+        let mut pages = vec![];
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
             let mut db_header = None;
             let btree_header;
+            let mut buffer = vec![];
 
             if page_i == 0 {
                 db_header = Some(header.clone());
+                btree_header = BTreePageHeader::new(&b_tree_page[100..112]).unwrap();
+                buffer.extend(&b_tree_page[112..]);
+            } else {
+                btree_header = BTreePageHeader::new(&b_tree_page[0..12]).unwrap();
+                buffer.extend(&b_tree_page[12..]);
             }
-            btree_header = BTreePageHeader::new(&b_tree_page[0..12]).unwrap();
 
-            pages.push(BTreePage::new(db_header, btree_header));
+            let page = Page {
+                db_header,
+                btree_header,
+                buffer,
+            };
+            pages.push(page);
         }
-
-        eprintln!("{:?}", pages);
 
         Ok(Self { header, pages })
     }
