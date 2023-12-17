@@ -14,15 +14,17 @@ impl Database {
         let file = fs::read(path)?;
 
         let header = DbHeader::new(&file[0..100])?;
-        assert_eq!(file.len() % header.page_size, 0);
+        assert_eq!(file[100..].len() % header.page_size, 0);
 
         let mut pages = Vec::new();
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
             let mut db_header = None;
-            let btree_header = BTreePageHeader::new(&b_tree_page[0..12]).unwrap();
+            let btree_header;
+
             if page_i == 0 {
                 db_header = Some(header.clone());
             }
+            btree_header = BTreePageHeader::new(&b_tree_page[0..12]).unwrap();
 
             pages.push(BTreePage::new(db_header, btree_header));
         }
