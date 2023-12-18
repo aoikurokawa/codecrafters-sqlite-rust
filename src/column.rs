@@ -1,7 +1,7 @@
+/// Each record consists of a key and optional data
 pub struct Column {
-    column_type: ColumnType,
+    key: ColumnType,
     data: Vec<u8>,
 }
 
-pub enum ColumnType {
-}
+pub enum ColumnType {}

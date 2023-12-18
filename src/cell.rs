@@ -1,4 +1,4 @@
-use crate::read_varint;
+use crate::decode_varint;
 
 pub struct Cell {
     npayload: i64,
@@ -10,10 +10,10 @@ impl Cell {
     pub fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         let mut idx = 0;
 
-        let (npayload, bytes_read) = read_varint(&bytes[idx..])?;
+        let (npayload, bytes_read) = decode_varint(&bytes[idx..])?;
         idx += bytes_read;
 
-        let (rowid, bytes_read) = read_varint(&bytes[idx..])?;
+        let (rowid, bytes_read) = decode_varint(&bytes[idx..])?;
         idx += bytes_read;
 
         let end = if npayload as usize > bytes.len() {
