@@ -22,6 +22,9 @@ pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
             )));
         }
 
+        // (byte & 0x7f):
+        // to isolate the lower 7 bits of the byte, effectively removing the high-order bit (the
+        // 8th bit) from the byte.
         result |= ((byte & 0x7f) as i64) << shift;
         shift += 7;
 
