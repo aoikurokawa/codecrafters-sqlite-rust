@@ -5,12 +5,12 @@ pub mod page;
 pub mod record;
 
 pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
-    if bytes.is_empty() || bytes.len() > 9 {
-        return Err(anyhow::Error::msg(format!(
-            "invalid varint: {:?}",
-            &bytes[0..9]
-        )));
-    }
+    // if bytes.is_empty() || bytes.len() > 9 {
+    //     return Err(anyhow::Error::msg(format!(
+    //         "invalid varint: {:?}",
+    //         &bytes[0..9]
+    //     )));
+    // }
 
     let mut result = 0;
     let mut shift = 0;
@@ -70,7 +70,7 @@ mod tests {
     fn test_decode_varint() {
         let varint_bytes = vec![0x81, 0x01];
 
-        let (val, _) = decode_varint(&varint_bytes).unwrap();
+        let (val, _i) = decode_varint(&varint_bytes).unwrap();
 
         assert_eq!(val, 129);
     }
