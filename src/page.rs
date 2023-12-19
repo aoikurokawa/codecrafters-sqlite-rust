@@ -7,7 +7,28 @@ pub struct Page {
     pub(crate) buffer: Vec<u8>,
 }
 
-impl Page {}
+impl Page {
+    pub fn new(idx: usize, header: DbHeader, b_tree_page: &[u8]) -> Self {
+        let mut db_header = None;
+        let btree_header;
+        let mut buffer = vec![];
+
+        if idx == 0 {
+            db_header = Some(header.clone());
+            btree_header = BTreePageHeader::new(&b_tree_page[100..112]).unwrap();
+            buffer.extend(&b_tree_page[112..]);
+        } else {
+            btree_header = BTreePageHeader::new(&b_tree_page[0..12]).unwrap();
+            buffer.extend(&b_tree_page[12..]);
+        }
+
+        Self {
+            db_header,
+            btree_header,
+            buffer,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct BTreePageHeader {

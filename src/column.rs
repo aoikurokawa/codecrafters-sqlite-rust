@@ -81,8 +81,39 @@ impl SerialType {
     }
 }
 
+#[derive(Debug)]
+pub enum SerialValue {
+    Null,
+    I8(i8),
+    I16(i16),
+    I24(i32),
+    I32(i32),
+    I48(i64),
+    I64(i64),
+    Float64(f64),
+    Zero,
+    One,
+    Blob(Vec<u8>),
+    String(String),
+}
+
 /// Each record consists of a key and optional data
+#[derive(Debug)]
 pub struct Column {
     key: SerialType,
-    data: Vec<u8>,
+    data: SerialValue,
+}
+
+impl Column {
+    pub fn new(key: SerialType, data: SerialValue) -> Self {
+        Self { key, data }
+    }
+
+    pub fn key(&self) -> &SerialType {
+        &self.key
+    }
+
+    pub fn data(&self) -> &SerialValue {
+        &self.data
+    }
 }

@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use crate::page::{BTreePageHeader, Page};
+use crate::page::Page;
 
 #[derive(Debug, Clone)]
 pub struct Database {
@@ -19,24 +19,7 @@ impl Database {
 
         let mut pages = vec![];
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
-            let mut db_header = None;
-            let btree_header;
-            let mut buffer = vec![];
-
-            if page_i == 0 {
-                db_header = Some(header.clone());
-                btree_header = BTreePageHeader::new(&b_tree_page[100..112]).unwrap();
-                buffer.extend(&b_tree_page[112..]);
-            } else {
-                btree_header = BTreePageHeader::new(&b_tree_page[0..12]).unwrap();
-                buffer.extend(&b_tree_page[12..]);
-            }
-
-            let page = Page {
-                db_header,
-                btree_header,
-                buffer,
-            };
+            let page = Page::new(page_i, header.clone(), b_tree_page);
             pages.push(page);
         }
 
