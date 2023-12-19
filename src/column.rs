@@ -1,11 +1,5 @@
 use anyhow::anyhow;
 
-/// Each record consists of a key and optional data
-pub struct Column {
-    key: SerialType,
-    data: Vec<u8>,
-}
-
 #[derive(Debug)]
 pub enum SerialType {
     Null,
@@ -62,4 +56,10 @@ impl SerialType {
             Self::String(len) => *len,
         }
     }
+}
+
+/// Each record consists of a key and optional data
+pub struct Column {
+    key: SerialType,
+    data: Vec<u8>,
 }
