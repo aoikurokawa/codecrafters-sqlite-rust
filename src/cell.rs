@@ -1,9 +1,9 @@
-use crate::decode_varint;
+use crate::{decode_varint, record::Record};
 
 pub struct Cell {
     npayload: i64,
     rowid: i64,
-    payload: Vec<u8>,
+    record: Record,
 }
 
 impl Cell {
@@ -23,11 +23,12 @@ impl Cell {
         };
 
         let payload = bytes[idx..end].to_vec();
+        let record = Record::new(&payload)?;
 
         Ok(Self {
             npayload,
             rowid,
-            payload,
+            record,
         })
     }
 }
