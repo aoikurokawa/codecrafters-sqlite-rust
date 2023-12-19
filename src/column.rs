@@ -2,17 +2,40 @@ use anyhow::anyhow;
 
 #[derive(Debug)]
 pub enum SerialType {
+    /// Value is a NULL
     Null,
+
+    /// Value is an 8-bit twos-complement integer
     I8,
+
+    /// Value is a big-endian 16-bit twos-complement integer
     I16,
+
+    /// Value is a big-endian 24-bit twos-complement integer
     I24,
+
+    /// Value is a big-endian 32-bit twos-complement integer
     I32,
+
+    /// Value is a big-endian 48-bit twos-complement integer
     I48,
+
+    /// Value is a big-endian 64-bit twos-complement integer
     I64,
+
+    /// Value is a big-endian IEEE 754-2008 64-bit floating point number
     Float64,
+
+    /// Value is the integer 0. (Only available for [schema format](https://www.sqlite.org/fileformat2.html#schemaformat) 4 and higher.)
     Zero,
+
+    /// Value is the integer 1. (Only available for [schema format](https://www.sqlite.org/fileformat2.html#schemaformat) 4 and higher.)
     One,
+
+    /// Value is a BLOB that is (N-12)/2 bytes in length
     Blob(usize),
+
+    /// Value is a string in the [text encoding](https://www.sqlite.org/fileformat2.html#enc) and (N-13)/2 bytes in length. The nul terminator is not stored
     String(usize),
 }
 
