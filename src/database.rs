@@ -5,8 +5,8 @@ use crate::page::Page;
 #[derive(Debug, Clone)]
 pub struct Database {
     /// The first 100 bytes of the database file comprise the database file header.
-    header: DbHeader,
-    pages: Vec<Page>,
+    pub header: DbHeader,
+    pub pages: Vec<Page>,
 }
 
 impl Database {

@@ -1,5 +1,6 @@
 use crate::{decode_varint, record::Record};
 
+#[derive(Debug, Clone)]
 pub struct Cell {
     npayload: i64,
     rowid: i64,
@@ -30,5 +31,9 @@ impl Cell {
             rowid,
             record,
         })
+    }
+
+    pub fn record(&self) -> &Record {
+        &self.record
     }
 }

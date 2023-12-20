@@ -1,4 +1,6 @@
-use crate::database::DbHeader;
+use anyhow::Context;
+
+use crate::{cell::Cell, database::DbHeader};
 
 #[derive(Debug, Clone)]
 pub struct Page {
@@ -6,6 +8,7 @@ pub struct Page {
     pub(crate) btree_header: BTreePageHeader,
     pub(crate) buffer: Vec<u8>,
     pub(crate) cell_offsets: Vec<u16>,
+    pub(crate) cells: Vec<Cell>,
 }
 
 impl Page {
@@ -23,15 +26,22 @@ impl Page {
             buffer.extend(&b_tree_page[12..]);
         }
 
-        let mut cell_offsets = vec![0; btree_header.ncells as usize];
         let header_size: u16 = match btree_header.page_type {
             PageType::InteriorIndex | PageType::InteriorTable => 12,
             _ => 8,
         };
 
+        let mut cell_offsets = vec![0; btree_header.ncells as usize];
+        let mut cells = Vec::new();
         for i in 0..btree_header.ncells {
             let offset = (header_size + i * 2) as usize;
-            cell_offsets[i as usize] = u16::from_be_bytes([buffer[offset], buffer[offset + 1]]);
+            let offset = u16::from_be_bytes([buffer[offset], buffer[offset + 1]]);
+            cell_offsets[i as usize] = offset;
+
+            let cell = Cell::from_bytes(&buffer[offset as usize..])
+                .context("read cell")
+                .expect("can read cell");
+            cells.push(cell)
         }
 
         Self {
@@ -39,7 +49,12 @@ impl Page {
             btree_header,
             buffer,
             cell_offsets,
+            cells,
         }
+    }
+
+    pub fn cell(&self, i: usize) -> Option<Cell> {
+        self.cells.get(i).cloned()
     }
 }
 

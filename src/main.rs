@@ -1,5 +1,5 @@
 use anyhow::{bail, Context, Result};
-use sqlite_starter_rust::database::Database;
+use sqlite_starter_rust::{column::SerialValue, database::Database};
 
 fn main() -> Result<()> {
     // Parse arguments
@@ -25,9 +25,31 @@ fn main() -> Result<()> {
             let file_path = &args[1];
 
             let db = Database::read_file(file_path)?;
-            // for page in db.pages.iter() {
-            //     eprintln!("{:?}", page.btree_header);
-            // }
+            let first_page = &db.pages[0];
+            for i in 0..db.tables() {
+                if let Some(cell) = first_page.cell(i as usize) {
+                    match cell.record().columns[0].data() {
+                        SerialValue::String(ref str) => {
+                            if str != "table" {
+                                continue;
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    let tbl_name = match cell.record().columns[2].data() {
+                        SerialValue::String(ref str) => {
+                            if str != "sqlite_sequence" {
+                                continue;
+                            }
+                            str
+                        }
+                        _ => "",
+                    };
+
+                    eprintln!("{tbl_name}");
+                };
+            }
         }
         _ => bail!("Missing or invalid command passed: {}", command),
     }

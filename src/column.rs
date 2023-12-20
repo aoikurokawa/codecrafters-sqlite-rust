@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SerialType {
     /// Value is a NULL
     Null,
@@ -81,7 +81,7 @@ impl SerialType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SerialValue {
     Null,
     I8(i8),
@@ -98,7 +98,7 @@ pub enum SerialValue {
 }
 
 /// Each record consists of a key and optional data
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Column {
     key: SerialType,
     data: SerialValue,

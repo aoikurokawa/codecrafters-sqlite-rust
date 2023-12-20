@@ -3,6 +3,7 @@ use crate::{
     decode_varint,
 };
 
+#[derive(Debug, Clone)]
 pub struct Record {
     pub columns: Vec<Column>,
 }
