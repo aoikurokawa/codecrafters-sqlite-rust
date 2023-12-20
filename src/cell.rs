@@ -12,19 +12,20 @@ impl Cell {
         let mut idx = 0;
 
         let (npayload, bytes_read) = decode_varint(&bytes[idx..])?;
+        eprintln!("npayload: {npayload}, bytes_read: {bytes_read}");
         idx += bytes_read;
 
         let (rowid, bytes_read) = decode_varint(&bytes[idx..])?;
         idx += bytes_read;
 
-        let end = if npayload as usize > bytes.len() {
-            bytes.len()
-        } else {
-            idx + npayload as usize
-        };
-
-        let payload = bytes[idx..end].to_vec();
-        let record = Record::new(&payload)?;
+        //let end = if npayload as usize > bytes.len() {
+        //    bytes.len()
+        //} else {
+        //    idx + npayload as usize
+        //};
+        let end = idx + npayload as usize;
+        let payload = &bytes[idx..end];
+        let record = Record::new(payload)?;
 
         Ok(Self {
             npayload,

@@ -41,6 +41,7 @@ pub enum SerialType {
 
 impl SerialType {
     pub fn read(npayload: i64) -> anyhow::Result<Self> {
+        eprintln!("serial type: {npayload}");
         match npayload {
             0 => Ok(Self::Null),
             1 => Ok(Self::I8),

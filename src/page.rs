@@ -31,6 +31,7 @@ impl Page {
             _ => 8,
         };
 
+        eprintln!("cell count: {}", btree_header.ncells);
         let mut cell_offsets = vec![0; btree_header.ncells as usize];
         let mut cells = Vec::new();
         for i in 0..btree_header.ncells {
@@ -38,10 +39,16 @@ impl Page {
             let offset = u16::from_be_bytes([buffer[offset], buffer[offset + 1]]);
             cell_offsets[i as usize] = offset;
 
-            let cell = Cell::from_bytes(&buffer[offset as usize..])
-                .context("read cell")
-                .expect("can read cell");
-            cells.push(cell)
+            eprintln!("page type: {:?}", btree_header.page_type);
+            match btree_header.page_type {
+                PageType::LeafTable => {
+                    let cell = Cell::from_bytes(&buffer[offset as usize..])
+                        .context("read cell")
+                        .expect("can read cell");
+                    cells.push(cell);
+                }
+                _ => todo!(),
+            }
         }
 
         Self {
