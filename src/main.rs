@@ -27,7 +27,7 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             let first_page = &db.pages[0];
             for i in 0..db.tables() {
-                if let Some(cell) = first_page.cell(i as usize) {
+                if let Ok(cell) = first_page.read_cell(i) {
                     match cell.record().columns[0].data() {
                         SerialValue::String(ref str) => {
                             if str != "table" {

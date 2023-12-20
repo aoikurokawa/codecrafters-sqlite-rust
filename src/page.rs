@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{bail, Context};
 
 use crate::{cell::Cell, database::DbHeader};
 
@@ -8,7 +8,6 @@ pub struct Page {
     pub(crate) btree_header: BTreePageHeader,
     pub(crate) buffer: Vec<u8>,
     pub(crate) cell_offsets: Vec<u16>,
-    pub(crate) cells: Vec<Cell>,
 }
 
 impl Page {
@@ -33,22 +32,22 @@ impl Page {
 
         eprintln!("cell count: {}", btree_header.ncells);
         let mut cell_offsets = vec![0; btree_header.ncells as usize];
-        let mut cells = Vec::new();
+        // let mut cells = Vec::new();
         for i in 0..btree_header.ncells {
             let offset = (header_size + i * 2) as usize;
             let offset = u16::from_be_bytes([buffer[offset], buffer[offset + 1]]);
             cell_offsets[i as usize] = offset;
 
-            eprintln!("page type: {:?}", btree_header.page_type);
-            match btree_header.page_type {
-                PageType::LeafTable => {
-                    let cell = Cell::from_bytes(&buffer[offset as usize..])
-                        .context("read cell")
-                        .expect("can read cell");
-                    cells.push(cell);
-                }
-                _ => todo!(),
-            }
+            //     eprintln!("page type: {:?}", btree_header.page_type);
+            //     match btree_header.page_type {
+            //         PageType::LeafTable => {
+            //             let cell = Cell::from_bytes(&buffer[offset as usize..])
+            //                 .context("read cell")
+            //                 .expect("can read cell");
+            //             cells.push(cell);
+            //         }
+            //         _ => todo!(),
+            //     }
         }
 
         Self {
@@ -56,12 +55,29 @@ impl Page {
             btree_header,
             buffer,
             cell_offsets,
-            cells,
         }
     }
 
-    pub fn cell(&self, i: usize) -> Option<Cell> {
-        self.cells.get(i).cloned()
+    // pub fn cell(&self, i: usize) -> Option<Cell> {
+    //     self.cells.get(i).cloned()
+    // }
+
+    pub fn read_cell(&self, i: u16) -> anyhow::Result<Cell> {
+        if i >= self.btree_header.ncells {
+            bail!("Cell index out of range");
+        }
+
+        let offset = self.cell_offsets[i as usize] as usize;
+
+        match self.btree_header.page_type {
+            PageType::LeafTable => {
+                let cell = Cell::from_bytes(&self.buffer[offset as usize..])
+                    .context("read cell")
+                    .expect("can read cell");
+                Ok(cell)
+            }
+            _ => todo!()
+        }
     }
 }
 
