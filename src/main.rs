@@ -25,31 +25,37 @@ fn main() -> Result<()> {
             let file_path = &args[1];
 
             let db = Database::read_file(file_path)?;
-            if let Some(first_page) = &db.pages.get(0) {
-                for i in 0..db.tables() {
-                    if let Ok(cell) = first_page.read_cell(i) {
-                        match cell.record().columns[0].data() {
-                            SerialValue::String(ref str) => {
-                                if str != "table" {
-                                    continue;
+            match db.pages.get(0) {
+                Some(first_page) => {
+                    for i in 0..db.tables() {
+                        eprintln!("reading cell");
+                        if let Ok(record) = first_page.read_cell(i) {
+                            eprintln!("{:?}", record.columns[0].data());
+                            match record.columns[0].data() {
+                                SerialValue::String(ref str) => {
+                                    if str != "table" {
+                                        continue;
+                                    }
                                 }
+                                _ => {}
                             }
-                            _ => {}
-                        }
 
-                        let tbl_name = match cell.record().columns[2].data() {
-                            SerialValue::String(ref str) => {
-                                if str != "sqlite_sequence" {
-                                    continue;
+                            eprintln!("{:?}", record.columns[2].data());
+                            let tbl_name = match record.columns[2].data() {
+                                SerialValue::String(ref str) => {
+                                    if str != "sqlite_sequence" {
+                                        continue;
+                                    }
+                                    str
                                 }
-                                str
-                            }
-                            _ => "",
+                                _ => "",
+                            };
+
+                            eprintln!("{tbl_name}");
                         };
-
-                        eprintln!("{tbl_name}");
-                    };
+                    }
                 }
+                None => eprintln!("can not read first page"),
             }
         }
         _ => bail!("Missing or invalid command passed: {}", command),

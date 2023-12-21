@@ -5,12 +5,13 @@ pub mod page;
 pub mod record;
 
 pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
-    // if bytes.is_empty() || bytes.len() > 9 {
-    //     return Err(anyhow::Error::msg(format!(
-    //         "invalid varint: {:?}",
-    //         &bytes[0..9]
-    //     )));
-    // }
+    if bytes.is_empty() || bytes.len() > 9 {
+        return Err(anyhow::Error::msg(format!(
+            "invalid varint: {:?}",
+            &bytes[0..9]
+        )));
+    }
+    eprintln!("byte len: {}", bytes.len());
 
     let mut result = 0;
     let mut shift = 0;
