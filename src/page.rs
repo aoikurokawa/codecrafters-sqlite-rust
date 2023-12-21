@@ -76,7 +76,7 @@ impl Page {
                     .expect("can read cell");
                 Ok(cell)
             }
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }

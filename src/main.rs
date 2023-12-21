@@ -25,30 +25,31 @@ fn main() -> Result<()> {
             let file_path = &args[1];
 
             let db = Database::read_file(file_path)?;
-            let first_page = &db.pages[0];
-            for i in 0..db.tables() {
-                if let Ok(cell) = first_page.read_cell(i) {
-                    match cell.record().columns[0].data() {
-                        SerialValue::String(ref str) => {
-                            if str != "table" {
-                                continue;
+            if let Some(first_page) = &db.pages.get(0) {
+                for i in 0..db.tables() {
+                    if let Ok(cell) = first_page.read_cell(i) {
+                        match cell.record().columns[0].data() {
+                            SerialValue::String(ref str) => {
+                                if str != "table" {
+                                    continue;
+                                }
                             }
+                            _ => {}
                         }
-                        _ => {}
-                    }
 
-                    let tbl_name = match cell.record().columns[2].data() {
-                        SerialValue::String(ref str) => {
-                            if str != "sqlite_sequence" {
-                                continue;
+                        let tbl_name = match cell.record().columns[2].data() {
+                            SerialValue::String(ref str) => {
+                                if str != "sqlite_sequence" {
+                                    continue;
+                                }
+                                str
                             }
-                            str
-                        }
-                        _ => "",
+                            _ => "",
+                        };
+
+                        eprintln!("{tbl_name}");
                     };
-
-                    eprintln!("{tbl_name}");
-                };
+                }
             }
         }
         _ => bail!("Missing or invalid command passed: {}", command),
