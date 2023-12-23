@@ -71,8 +71,21 @@ impl Page {
 
         match self.btree_header.page_type {
             PageType::LeafTable => {
-                let cell = Cell::from_bytes(&self.buffer[offset..])?;
-                Ok(cell.record().clone())
+                // let cell = Cell::from_bytes(&self.buffer[offset..])?;
+                let mut idx = offset;
+
+                let (npayload, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                    .context("decode varint for payload size")?;
+                idx += bytes_read;
+
+                let (rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                    .context("decode varint for payload size")?;
+                idx += bytes_read;
+                let end = idx + npayload as usize;
+                let payload = &self.buffer[idx..end];
+                let record = Record::new(payload)?;
+
+                Ok(record)
             }
             _ => todo!(),
         }
