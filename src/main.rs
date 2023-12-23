@@ -63,6 +63,9 @@ fn main() -> Result<()> {
 
             let db = Database::read_file(file_path)?;
             // eprintln!("Number of page: {}", db.pages.len());
+            // for page in &db.pages {
+            //     eprintln!("{:?}", page.cell_offsets.len());
+            // }
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..db.tables() {
                     if let Ok(record) = first_page.read_cell(i) {
@@ -91,7 +94,8 @@ fn main() -> Result<()> {
                                     // println!("{:?}", target_table);
                                     match record.columns[3].data() {
                                         SerialValue::I8(num) => {
-                                            if let Some(page) = db.pages.get(*num as usize) {
+                                            // eprintln!("num: {num}");
+                                            if let Some(page) = db.pages.get(*num as usize - 1) {
                                                 println!("{:?}", page.cell_offsets.len());
                                             }
                                         }
