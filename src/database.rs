@@ -22,7 +22,7 @@ impl Database {
 
         let mut pages = vec![];
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
-            let page = Page::new(page_i, header.clone(), b_tree_page).context("create page")?;
+            let page = Page::new(page_i, header.clone(), b_tree_page);
             pages.push(page);
         }
 

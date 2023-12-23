@@ -27,11 +27,9 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             match db.pages.get(0) {
                 Some(first_page) => {
-                    eprintln!("cell offsets: {:?}", first_page.cell_offsets); // [3983, 3901, 3779]
-
+                    let mut tables = String::new();
                     for i in 0..db.tables() {
                         if let Ok(record) = first_page.read_cell(i) {
-                            eprintln!("{:?}", record.columns[0].data());
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
                                     if str != "table" {
@@ -41,20 +39,20 @@ fn main() -> Result<()> {
                                 _ => {}
                             }
 
-                            eprintln!("{:?}", record.columns[2].data());
                             let tbl_name = match record.columns[2].data() {
                                 SerialValue::String(ref str) => {
-                                    if str != "sqlite_sequence" {
+                                    if str == "sqlite_sequence" {
                                         continue;
                                     }
-                                    str
+                                    &str
                                 }
                                 _ => "",
                             };
 
-                            eprintln!("{tbl_name}");
+                            tables.push_str(&format!("{} ", tbl_name));
                         };
                     }
+                    println!("{tables}");
                 }
                 None => eprintln!("can not read first page"),
             }

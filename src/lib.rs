@@ -18,12 +18,12 @@ pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
     for (i, &byte) in bytes.iter().take(8).enumerate() {
         bytes_read += 1;
 
-        let has_more = i != 8 && byte & 0x80 != 0;
+        let has_more = i != 8 && (byte & 0b10000000 != 0);
 
         if has_more {
-            result = (result << 7) | ((byte & 0x7f) as i64);
+            result = (result << 7) | ((byte & 0b01111111) as i64);
         } else {
-            result = (result << 7) | byte as i64;
+            result = (result << 7) | (byte as i64);
             bytes_read = i + 1;
             break;
         }

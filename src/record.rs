@@ -12,7 +12,7 @@ pub struct Record {
 
 impl Record {
     pub fn new(data: &[u8]) -> anyhow::Result<Self> {
-        let (header_length, hl_size) = decode_varint(&data[0..9])?;
+        let (header_length, hl_size) = decode_varint(&data[0..9]).context("read record header")?;
         let header_length = header_length as usize;
         let mut header_index = hl_size;
         let mut data_index = header_length;
