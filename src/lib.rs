@@ -13,60 +13,23 @@ pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
     }
 
     let mut result = 0;
-    let mut shift = 0;
     let mut bytes_read = 0;
 
-    for &byte in bytes.iter().take(8) {
+    for (i, &byte) in bytes.iter().take(8).enumerate() {
         bytes_read += 1;
 
-        if shift > 64 {
-            return Err(anyhow::Error::msg(format!(
-                "Varint too long, integer overflow"
-            )));
-        }
+        let has_more = i != 8 && byte & 0x80 != 0;
 
-        // (byte & 0x7f):
-        // to isolate the lower 7 bits of the byte, effectively removing the high-order bit (the
-        // 8th bit) from the byte.
-        result |= ((byte & 0x7f) as i64) << shift;
-        shift += 7;
-
-        // If the high-order bit of a byte is 0, it signifies the end of the varint, and the
-        // function resturns the result
-        if byte & 0x80 == 0 {
-            return Ok((result, bytes_read));
-        }
-    }
-
-    // If there are 9 bytes, the function ensures that the ninth byte does not have its high-order
-    // bit set ( as per the specification)
-    if bytes.len() == 9 {
-        if let Some(&last_byte) = bytes.get(8) {
-            if last_byte & 0x80 != 0 {
-                return Err(anyhow::Error::msg(format!(
-                    "invalid varint format: {:?}",
-                    &bytes[0..9]
-                )));
-            }
-            result |= (last_byte as i64) << shift;
-            bytes_read += 1;
+        if has_more {
+            result = (result << 7) | ((byte & 0x7f) as i64);
+        } else {
+            result = (result << 7) | byte as i64;
+            bytes_read = i + 1;
+            break;
         }
     }
 
     Ok((result, bytes_read))
-    // let mut value = 0;
-
-    // for (i, byte) in bytes.iter().enumerate() {
-    //     value = (value << (i * 7)) + (byte & 0b0111_1111) as i64;
-    //     if byte & 0b1000_0000 == 0 || i > 9 {
-    //         return Ok((value, i + 1usize));
-    //     }
-    // }
-
-    // return Err(anyhow::Error::msg(format!(
-    //     "invalid varint: {:?}",
-    //     &bytes[0..9]
-    // )));
 }
 
 #[cfg(test)]

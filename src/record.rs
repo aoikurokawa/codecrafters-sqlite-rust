@@ -13,8 +13,6 @@ pub struct Record {
 impl Record {
     pub fn new(data: &[u8]) -> anyhow::Result<Self> {
         let (header_length, hl_size) = decode_varint(&data[0..9])?;
-        eprintln!("header_length: {header_length}"); // 7
-        eprintln!("hl_size: {hl_size}"); // 1
         let header_length = header_length as usize;
         let mut header_index = hl_size;
         let mut data_index = header_length;
@@ -81,9 +79,7 @@ impl Record {
                     SerialValue::Blob((data[data_index..data_index + len]).to_vec())
                 }
                 SerialType::String(len) => {
-                    eprintln!("Serial Type: String");
                     let val = String::from_utf8(data[data_index..(data_index + len)].to_vec())?;
-                    eprintln!("Serial Value: {val:?}");
                     SerialValue::String(val)
                 }
             };

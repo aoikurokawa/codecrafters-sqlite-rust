@@ -27,8 +27,9 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             match db.pages.get(0) {
                 Some(first_page) => {
+                    eprintln!("cell offsets: {:?}", first_page.cell_offsets); // [3983, 3901, 3779]
+
                     for i in 0..db.tables() {
-                        eprintln!("reading cell");
                         if let Ok(record) = first_page.read_cell(i) {
                             eprintln!("{:?}", record.columns[0].data());
                             match record.columns[0].data() {

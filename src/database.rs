@@ -1,5 +1,7 @@
 use std::{fs, path::Path};
 
+use anyhow::Context;
+
 use crate::page::Page;
 
 #[derive(Debug, Clone)]
@@ -16,10 +18,11 @@ impl Database {
         let (header, _rest) = file.split_at(100);
         let header = DbHeader::new(header)?;
         assert_eq!(file.len() % header.page_size, 0);
+        assert_eq!(header.header_string, "SQLite format 3\0");
 
         let mut pages = vec![];
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
-            let page = Page::new(page_i, header.clone(), b_tree_page);
+            let page = Page::new(page_i, header.clone(), b_tree_page).context("create page")?;
             pages.push(page);
         }
 
@@ -44,7 +47,6 @@ pub struct DbHeader {
 impl DbHeader {
     pub fn new(header: &[u8]) -> anyhow::Result<Self> {
         let header_string = String::from_utf8(header[0..16].to_vec())?;
-        assert_eq!(header_string, "SQLite format 3\0");
 
         Ok(Self {
             header_string,

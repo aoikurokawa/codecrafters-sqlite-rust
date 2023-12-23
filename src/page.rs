@@ -7,11 +7,12 @@ pub struct Page {
     pub(crate) db_header: Option<DbHeader>,
     pub(crate) btree_header: BTreePageHeader,
     pub(crate) buffer: Vec<u8>,
-    pub(crate) cell_offsets: Vec<u16>,
+    pub cell_offsets: Vec<u16>,
+    pub(crate) cells: Vec<Cell>,
 }
 
 impl Page {
-    pub fn new(idx: usize, header: DbHeader, b_tree_page: &[u8]) -> Self {
+    pub fn new(idx: usize, header: DbHeader, b_tree_page: &[u8]) -> anyhow::Result<Self> {
         let mut db_header = None;
         let btree_header;
         let mut buffer = vec![];
@@ -32,29 +33,44 @@ impl Page {
 
         let ncells = btree_header.ncells as usize;
         let mut cell_offsets = vec![0; ncells];
-        // let mut cells = Vec::new();
+        let mut cells = Vec::new();
         for i in 0..ncells {
             let offset = header_size + i * 2;
             cell_offsets[i] = u16::from_be_bytes([buffer[offset], buffer[offset + 1]]);
 
-            //     eprintln!("page type: {:?}", btree_header.page_type);
-            //     match btree_header.page_type {
-            //         PageType::LeafTable => {
-            //             let cell = Cell::from_bytes(&buffer[offset as usize..])
-            //                 .context("read cell")
-            //                 .expect("can read cell");
-            //             cells.push(cell);
-            //         }
-            //         _ => todo!(),
-            //     }
+            match btree_header.page_type {
+                PageType::LeafTable => {
+                    let cell = Cell::from_bytes(&buffer[offset..])?;
+                    cells.push(cell);
+                    // let mut idx = offset;
+
+                    // let (npayload, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                    //     .context("decode varint for payload size")?;
+                    // idx += bytes_read;
+                    // eprintln!("payload size: {}", npayload);
+
+                    // let (rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                    //     .context("decode varint for payload size")?;
+                    // idx += bytes_read;
+                    // eprintln!("row id: {}", rowid);
+
+                    // let end = idx + npayload as usize;
+                    // let payload = &self.buffer[idx..end];
+                    // let record = Record::new(payload)?;
+
+                    // Ok(record)
+                }
+                _ => todo!(),
+            }
         }
 
-        Self {
+        Ok(Self {
             db_header,
             btree_header,
             buffer: b_tree_page.to_vec(),
             cell_offsets,
-        }
+            cells,
+        })
     }
 
     // pub fn cell(&self, i: usize) -> Option<Cell> {
@@ -77,10 +93,13 @@ impl Page {
                 let (npayload, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
                     .context("decode varint for payload size")?;
                 idx += bytes_read;
+                eprintln!("payload size: {}", npayload);
 
                 let (rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
                     .context("decode varint for payload size")?;
                 idx += bytes_read;
+                eprintln!("row id: {}", rowid);
+
                 let end = idx + npayload as usize;
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload)?;
