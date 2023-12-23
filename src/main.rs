@@ -57,7 +57,7 @@ fn main() -> Result<()> {
                 None => eprintln!("can not read first page"),
             }
         }
-        query if query.starts_with("SELECT") => {
+        query if query.to_lowercase().starts_with("select") => {
             let file_path = &args[1];
             let target_table = query.split(" ").last().expect("specify table name");
 
