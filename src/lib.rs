@@ -14,8 +14,11 @@ pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
 
     let mut result = 0;
     let mut shift = 0;
+    let mut bytes_read = 0;
 
-    for (idx, &byte) in bytes.iter().take(8).enumerate() {
+    for &byte in bytes.iter().take(8) {
+        bytes_read += 1;
+
         if shift > 64 {
             return Err(anyhow::Error::msg(format!(
                 "Varint too long, integer overflow"
@@ -31,7 +34,7 @@ pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
         // If the high-order bit of a byte is 0, it signifies the end of the varint, and the
         // function resturns the result
         if byte & 0x80 == 0 {
-            return Ok((result, idx));
+            return Ok((result, bytes_read));
         }
     }
 
@@ -46,10 +49,11 @@ pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
                 )));
             }
             result |= (last_byte as i64) << shift;
+            bytes_read += 1;
         }
     }
 
-    Ok((result, 8))
+    Ok((result, bytes_read))
     // let mut value = 0;
 
     // for (i, byte) in bytes.iter().enumerate() {

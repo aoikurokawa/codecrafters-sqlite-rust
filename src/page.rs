@@ -31,7 +31,6 @@ impl Page {
         };
 
         let ncells = btree_header.ncells as usize;
-        eprintln!("cell count: {}", ncells);
         let mut cell_offsets = vec![0; ncells];
         // let mut cells = Vec::new();
         for i in 0..ncells {
@@ -72,19 +71,8 @@ impl Page {
 
         match self.btree_header.page_type {
             PageType::LeafTable => {
-                let (payload_size, s0) = decode_varint(&self.buffer[offset..offset + 9])
-                    .context("decode varint for payload size")?;
-
-                let (rowid, s1) = decode_varint(&self.buffer[offset + s0..offset + s0 + 9])
-                    .context("decode varint for payload size")?;
-
-                let payload =
-                    &self.buffer[(offset + s0 + s1)..(offset + s0 + s1 + payload_size as usize)];
-
-                eprintln!("Payload: {payload:?}");
-                let record = Record::new(payload)?;
-                eprintln!("Record: {record:?}");
-                Ok(record)
+                let cell = Cell::from_bytes(&self.buffer[offset..])?;
+                Ok(cell.record().clone())
             }
             _ => todo!(),
         }

@@ -1,3 +1,5 @@
+use anyhow::Context;
+
 use crate::{decode_varint, record::Record};
 
 #[derive(Debug, Clone)]
@@ -11,11 +13,12 @@ impl Cell {
     pub fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         let mut idx = 0;
 
-        let (npayload, bytes_read) = decode_varint(&bytes[idx..])?;
-        eprintln!("npayload: {npayload}, bytes_read: {bytes_read}");
+        let (npayload, bytes_read) =
+            decode_varint(&bytes[idx..idx + 9]).context("decode varint for payload size")?;
         idx += bytes_read;
 
-        let (rowid, bytes_read) = decode_varint(&bytes[idx..])?;
+        let (rowid, bytes_read) =
+            decode_varint(&bytes[idx..idx + 9]).context("decode varint for payload size")?;
         idx += bytes_read;
 
         //let end = if npayload as usize > bytes.len() {

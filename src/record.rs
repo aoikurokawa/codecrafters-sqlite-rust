@@ -1,3 +1,5 @@
+use anyhow::Context;
+
 use crate::{
     column::{Column, SerialType, SerialValue},
     decode_varint,
@@ -10,17 +12,17 @@ pub struct Record {
 
 impl Record {
     pub fn new(data: &[u8]) -> anyhow::Result<Self> {
-        eprintln!("data: {data:?}");
         let (header_length, hl_size) = decode_varint(&data[0..9])?;
-        eprintln!("header_length: {header_length}");
+        eprintln!("header_length: {header_length}"); // 7
+        eprintln!("hl_size: {hl_size}"); // 1
         let header_length = header_length as usize;
         let mut header_index = hl_size;
         let mut data_index = header_length;
 
         let mut columns = Vec::new();
         while header_index < header_length {
-            let (int, len) = decode_varint(&data[header_index..header_index + 9])?;
-            eprintln!("{len}");
+            let (int, len) =
+                decode_varint(&data[header_index..header_index + 9]).context("read serial type")?;
             header_index += len;
 
             let serial_type = SerialType::read(int)?;
@@ -78,9 +80,12 @@ impl Record {
                 SerialType::Blob(len) => {
                     SerialValue::Blob((data[data_index..data_index + len]).to_vec())
                 }
-                SerialType::String(len) => SerialValue::String(String::from_utf8(
-                    data[data_index..data_index + len].to_vec(),
-                )?),
+                SerialType::String(len) => {
+                    eprintln!("Serial Type: String");
+                    let val = String::from_utf8(data[data_index..(data_index + len)].to_vec())?;
+                    eprintln!("Serial Value: {val:?}");
+                    SerialValue::String(val)
+                }
             };
 
             data_index += serial_type.length();
