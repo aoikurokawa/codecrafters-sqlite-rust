@@ -5,7 +5,7 @@ use crate::{database::DbHeader, decode_varint, record::Record};
 #[derive(Debug, Clone)]
 pub struct Page {
     pub(crate) db_header: Option<DbHeader>,
-    pub(crate) btree_header: BTreePageHeader,
+    pub btree_header: BTreePageHeader,
     pub(crate) buffer: Vec<u8>,
     pub cell_offsets: Vec<u16>,
 }

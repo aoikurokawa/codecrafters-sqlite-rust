@@ -62,10 +62,17 @@ fn main() -> Result<()> {
             let target_table = query.split(" ").last().expect("specify table name");
 
             let db = Database::read_file(file_path)?;
-            eprintln!("Number of page: {}", db.pages.len());
+            // eprintln!("Number of page: {}", db.pages.len());
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..db.tables() {
                     if let Ok(record) = first_page.read_cell(i) {
+                        // eprintln!("{:?}", record.columns.len());
+                        // eprintln!("{:?}", record.columns[0].data());
+                        // eprintln!("{:?}", record.columns[1].data());
+                        // eprintln!("{:?}", record.columns[2].data());
+                        // eprintln!("{:?}", record.columns[3].data());
+                        // eprintln!("{:?}", record.columns[4].data());
+
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
                                 if str != "table" {
@@ -80,7 +87,17 @@ fn main() -> Result<()> {
                                 "sqlite_sequence" => {
                                     continue;
                                 }
-                                target_table => {}
+                                table_name if table_name == target_table => {
+                                    // println!("{:?}", target_table);
+                                    match record.columns[3].data() {
+                                        SerialValue::I8(num) => {
+                                            if let Some(page) = db.pages.get(*num as usize) {
+                                                println!("{:?}", page.cell_offsets.len());
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
                                 _ => {}
                             },
 
@@ -88,10 +105,10 @@ fn main() -> Result<()> {
                         }
                     }
 
-                    tables.push_str(&format!("{} ", tbl_name));
+                    // tables.push_str(&format!("{} ", tbl_name));
                 }
             }
-            println!("{tables}");
+            // println!("{tables}");
         }
         _ => bail!("Missing or invalid command passed: {}", command),
     }
