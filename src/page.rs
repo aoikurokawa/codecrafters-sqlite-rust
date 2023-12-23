@@ -20,11 +20,9 @@ impl Page {
         if idx == 0 {
             db_header = Some(header.clone());
             btree_header = BTreePageHeader::new(&b_tree_page[100..112]).unwrap();
-            // buffer.extend(&b_tree_page[112..]);
             buffer.drain(0..100);
         } else {
             btree_header = BTreePageHeader::new(&b_tree_page[0..12]).unwrap();
-            // buffer.extend(&b_tree_page[12..]);
         }
 
         let header_size: usize = match btree_header.page_type {
@@ -55,7 +53,7 @@ impl Page {
         Self {
             db_header,
             btree_header,
-            buffer,
+            buffer: b_tree_page.to_vec(),
             cell_offsets,
         }
     }
@@ -76,11 +74,9 @@ impl Page {
             PageType::LeafTable => {
                 let (payload_size, s0) = decode_varint(&self.buffer[offset..offset + 9])
                     .context("decode varint for payload size")?;
-                eprintln!("payload size: {:?}", payload_size);
 
                 let (rowid, s1) = decode_varint(&self.buffer[offset + s0..offset + s0 + 9])
                     .context("decode varint for payload size")?;
-                eprintln!("row id: {:?}", rowid);
 
                 let payload =
                     &self.buffer[(offset + s0 + s1)..(offset + s0 + s1 + payload_size as usize)];

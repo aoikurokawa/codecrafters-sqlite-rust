@@ -11,7 +11,6 @@ pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
             &bytes[0..9]
         )));
     }
-    eprintln!("byte len: {}", bytes.len());
 
     let mut result = 0;
     let mut shift = 0;
