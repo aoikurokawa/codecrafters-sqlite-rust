@@ -68,6 +68,11 @@ impl Page {
                     .context("decode varint for payload size")?;
                 idx += bytes_read;
 
+                // let end = if npayload as usize > self.buffer.len() {
+                //     self.buffer.len()
+                // } else {
+                //     idx + npayload as usize
+                // };
                 let end = idx + npayload as usize;
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;

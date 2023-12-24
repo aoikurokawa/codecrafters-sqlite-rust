@@ -92,10 +92,21 @@ fn main() -> Result<()> {
                                                             if let Some(page) =
                                                                 db.pages.get(*num as usize - 1)
                                                             {
-                                                                println!(
-                                                                    "{:?}",
-                                                                    page.cell_offsets.len()
-                                                                );
+                                                                let cell_len =
+                                                                    page.cell_offsets.len();
+                                                                println!("{:?}", cell_len);
+
+                                                                for i in 0..cell_len {
+                                                                    let record =
+                                                                        page.read_cell(i as u16)?;
+
+                                                                    println!(
+                                                                        "{}",
+                                                                        record.columns[1]
+                                                                            .data()
+                                                                            .display()
+                                                                    );
+                                                                }
                                                             }
                                                         }
                                                         _ => {}

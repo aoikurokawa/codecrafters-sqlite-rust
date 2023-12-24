@@ -20,7 +20,7 @@ impl Record {
         let mut columns = Vec::new();
         while header_index < header_length {
             let (int, len) =
-                decode_varint(&data[header_index..header_index + 9]).context("read serial type")?;
+                decode_varint(&data[header_index..header_index + 8]).context("read serial type")?;
             header_index += len;
 
             let serial_type = SerialType::read(int)?;

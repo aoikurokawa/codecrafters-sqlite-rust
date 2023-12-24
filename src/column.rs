@@ -97,6 +97,15 @@ pub enum SerialValue {
     String(String),
 }
 
+impl SerialValue {
+    pub fn display(&self) -> String {
+        match self {
+            SerialValue::String(txt) => txt.to_string(),
+            _ => todo!(),
+        }
+    }
+}
+
 /// Each record consists of a key and optional data
 #[derive(Debug, Clone)]
 pub struct Column {
