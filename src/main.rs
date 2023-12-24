@@ -60,7 +60,6 @@ fn main() -> Result<()> {
         query if query.to_lowercase().starts_with("select count(*)") => {
             let file_path = &args[1];
             let select_statement = Sql::from_str(query);
-            // let target_table = query.split(" ").last().expect("specify table name");
 
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
@@ -81,7 +80,6 @@ fn main() -> Result<()> {
                                     continue;
                                 }
                                 t_name => {
-                                    // println!("{:?}", target_table);
                                     if select_statement.tbl_name == t_name {
                                         match record.columns[3].data() {
                                             SerialValue::I8(num) => {
@@ -107,7 +105,6 @@ fn main() -> Result<()> {
         query if query.to_lowercase().starts_with("select") => {
             let file_path = &args[1];
             let select_statement = Sql::from_str(query);
-            // let target_table = query.split(" ").last().expect("specify table name");
 
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
@@ -128,7 +125,6 @@ fn main() -> Result<()> {
                                     continue;
                                 }
                                 t_name => {
-                                    // println!("{:?}", target_table);
                                     if select_statement.tbl_name == t_name {
                                         match record.columns[3].data() {
                                             SerialValue::I8(num) => {
@@ -140,26 +136,34 @@ fn main() -> Result<()> {
                                                     let create_statement = Sql::from_str(
                                                         &record.columns[4].data().display(),
                                                     );
-                                                    let mut field_idx = 0;
-                                                    for (i, field) in create_statement
+
+                                                    let mut field_idxes = Vec::new();
+
+                                                    for (i, create_field) in create_statement
                                                         .field_name
                                                         .iter()
                                                         .enumerate()
                                                     {
-                                                        if *field == select_statement.field_name[0]
+                                                        for select_field in
+                                                            &select_statement.field_name
                                                         {
-                                                            field_idx = i;
+                                                            if *create_field == *select_field {
+                                                                field_idxes.push(i);
+                                                            }
                                                         }
                                                     }
                                                     for i in 0..cell_len {
                                                         let record = page.read_cell(i as u16)?;
 
-                                                        println!(
-                                                            "{}",
-                                                            record.columns[field_idx]
-                                                                .data()
-                                                                .display()
-                                                        );
+                                                        let mut values = Vec::new();
+                                                        for field_idx in &field_idxes {
+                                                            values.push(
+                                                                record.columns[*field_idx]
+                                                                    .data()
+                                                                    .display(),
+                                                            );
+                                                        }
+                                                        println!("{}", values.join("|"));
                                                     }
                                                 }
                                             }
