@@ -137,7 +137,7 @@ fn main() -> Result<()> {
                                                         &record.columns[4].data().display(),
                                                     );
 
-                                                    let mut field_idxes = Vec::new();
+                                                    let mut fields = Vec::new();
 
                                                     for (i, create_field) in create_statement
                                                         .field_name
@@ -148,7 +148,10 @@ fn main() -> Result<()> {
                                                             &select_statement.field_name
                                                         {
                                                             if *create_field == *select_field {
-                                                                field_idxes.push(i);
+                                                                fields.push((
+                                                                    i,
+                                                                    select_field.as_str(),
+                                                                ));
                                                             }
                                                         }
                                                     }
@@ -156,12 +159,37 @@ fn main() -> Result<()> {
                                                         let record = page.read_cell(i as u16)?;
 
                                                         let mut values = Vec::new();
-                                                        for field_idx in &field_idxes {
-                                                            values.push(
-                                                                record.columns[*field_idx]
-                                                                    .data()
-                                                                    .display(),
-                                                            );
+                                                        if !select_statement.selection.is_empty() {
+                                                            for (field_idx, field_name) in &fields {
+                                                                if let Some(value) =
+                                                                    select_statement
+                                                                        .selection
+                                                                        .get(*field_name)
+                                                                {
+                                                                    let candidate_value = record
+                                                                        .columns[*field_idx]
+                                                                        .data()
+                                                                        .display();
+                                                                    if candidate_value == *value {
+                                                                        values.push(value.clone());
+                                                                    }
+                                                                } else {
+                                                                    values.push(
+                                                                        record.columns[*field_idx]
+                                                                            .data()
+                                                                            .display(),
+                                                                    );
+                                                                }
+                                                            }
+                                                        } else {
+                                                            for (field_idx, _field_name) in &fields
+                                                            {
+                                                                values.push(
+                                                                    record.columns[*field_idx]
+                                                                        .data()
+                                                                        .display(),
+                                                                );
+                                                            }
                                                         }
                                                         println!("{}", values.join("|"));
                                                     }

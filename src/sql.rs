@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+
 use sqlparser::{
-    ast::{Expr, SelectItem, SetExpr, Statement, TableFactor},
+    ast::{Expr, SelectItem, SetExpr, Statement, TableFactor, Value},
     dialect::GenericDialect,
     parser::Parser,
 };
 
 pub struct Sql {
     pub field_name: Vec<String>,
+    pub selection: HashMap<String, String>,
     pub tbl_name: String,
 }
 
@@ -17,6 +20,7 @@ impl Sql {
 
         let mut field_name = Vec::new();
         let mut tbl_name = String::new();
+        let mut selection = HashMap::new();
 
         while field_name.is_empty() && tbl_name.is_empty() {
             match &query[0] {
@@ -32,6 +36,28 @@ impl Sql {
                                 },
                                 _ => todo!(),
                             }
+                        }
+                        if let Some(expr) = &select.selection {
+                            let mut key = String::new();
+                            let mut value = String::new();
+                            match expr {
+                                Expr::BinaryOp { left, op: _, right } => {
+                                    if let Expr::Identifier(ident) = *left.clone() {
+                                        key = ident.value;
+                                    }
+                                    if let Expr::Value(val) = *right.clone() {
+                                        match val {
+                                            Value::SingleQuotedString(txt) => {
+                                                value = txt.to_string();
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+
+                            selection.insert(key, value);
                         }
                         match &select.from[0].relation {
                             TableFactor::Table {
@@ -91,6 +117,7 @@ impl Sql {
 
         Self {
             field_name,
+            selection,
             tbl_name,
         }
     }
