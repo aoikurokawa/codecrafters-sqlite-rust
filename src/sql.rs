@@ -24,7 +24,6 @@ impl Sql {
                     SetExpr::Select(select) => {
                         match &select.projection[0] {
                             SelectItem::UnnamedExpr(expr) => {
-                                eprintln!("{:?}", expr);
                                 match expr {
                                     Expr::Identifier(ident) => {
                                         field_name.push(ident.value.to_string());

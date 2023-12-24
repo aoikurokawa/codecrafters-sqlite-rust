@@ -75,10 +75,7 @@ fn main() -> Result<()> {
                             _ => {}
                         }
 
-                        eprintln!("{}", record.columns[4].data().display());
-
-                        let create_statement = Sql::from_str(&record.columns[4].data().display());
-                        let mut field_idx = 0;
+                        // eprintln!("{}", record.columns[4].data().display());
 
                         match record.columns[2].data() {
                             SerialValue::String(str) => match str.as_str() {
@@ -96,11 +93,25 @@ fn main() -> Result<()> {
                                                     let cell_len = page.cell_offsets.len();
                                                     println!("{:?}", cell_len);
 
+                                                    let create_statement = Sql::from_str(
+                                                        &record.columns[4].data().display(),
+                                                    );
+                                                    let mut field_idx = 0;
+                                                    for (i, field) in create_statement
+                                                        .field_name
+                                                        .iter()
+                                                        .enumerate()
+                                                    {
+                                                        if *field == select_statement.field_name[0]
+                                                        {
+                                                            field_idx = i;
+                                                        }
+                                                    }
                                                     for i in 0..cell_len {
                                                         let record = page.read_cell(i as u16)?;
 
                                                         println!(
-                                                            "{:?}",
+                                                            "{}",
                                                             record.columns[field_idx]
                                                                 .data()
                                                                 .display()
