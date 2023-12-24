@@ -57,6 +57,54 @@ fn main() -> Result<()> {
                 None => eprintln!("can not read first page"),
             }
         }
+        query if query.to_lowercase().starts_with("select count(*)") => {
+            let file_path = &args[1];
+            let select_statement = Sql::from_str(query);
+            // let target_table = query.split(" ").last().expect("specify table name");
+
+            let db = Database::read_file(file_path)?;
+            if let Some(first_page) = db.pages.get(0) {
+                for i in 0..db.tables() {
+                    if let Ok(record) = first_page.read_cell(i) {
+                        match record.columns[0].data() {
+                            SerialValue::String(ref str) => {
+                                if str != "table" {
+                                    continue;
+                                }
+                            }
+                            _ => {}
+                        }
+
+                        match record.columns[2].data() {
+                            SerialValue::String(str) => match str.as_str() {
+                                "sqlite_sequence" => {
+                                    continue;
+                                }
+                                t_name => {
+                                    // println!("{:?}", target_table);
+                                    if select_statement.tbl_name == t_name {
+                                        match record.columns[3].data() {
+                                            SerialValue::I8(num) => {
+                                                // eprintln!("num: {num}");
+                                                if let Some(page) = db.pages.get(*num as usize - 1)
+                                                {
+                                                    let cell_len = page.cell_offsets.len();
+                                                    println!("{:?}", cell_len);
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            },
+
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
         query if query.to_lowercase().starts_with("select") => {
             let file_path = &args[1];
             let select_statement = Sql::from_str(query);
@@ -75,8 +123,6 @@ fn main() -> Result<()> {
                             _ => {}
                         }
 
-                        // eprintln!("{}", record.columns[4].data().display());
-
                         match record.columns[2].data() {
                             SerialValue::String(str) => match str.as_str() {
                                 "sqlite_sequence" => {
@@ -91,7 +137,6 @@ fn main() -> Result<()> {
                                                 if let Some(page) = db.pages.get(*num as usize - 1)
                                                 {
                                                     let cell_len = page.cell_offsets.len();
-                                                    println!("{:?}", cell_len);
 
                                                     let create_statement = Sql::from_str(
                                                         &record.columns[4].data().display(),
@@ -129,11 +174,8 @@ fn main() -> Result<()> {
                             _ => {}
                         }
                     }
-
-                    // tables.push_str(&format!("{} ", tbl_name));
                 }
             }
-            // println!("{tables}");
         }
         _ => bail!("Missing or invalid command passed: {}", command),
     }
