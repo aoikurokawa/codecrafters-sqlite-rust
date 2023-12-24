@@ -1,4 +1,5 @@
 pub mod cell;
+pub mod sql;
 pub mod column;
 pub mod database;
 pub mod page;
