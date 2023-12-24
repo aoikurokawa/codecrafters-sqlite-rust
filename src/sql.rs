@@ -23,14 +23,12 @@ impl Sql {
                 Statement::Query(select) => match *select.body.clone() {
                     SetExpr::Select(select) => {
                         match &select.projection[0] {
-                            SelectItem::UnnamedExpr(expr) => {
-                                match expr {
-                                    Expr::Identifier(ident) => {
-                                        field_name.push(ident.value.to_string());
-                                    }
-                                    _ => {},
+                            SelectItem::UnnamedExpr(expr) => match expr {
+                                Expr::Identifier(ident) => {
+                                    field_name.push(ident.value.to_string());
                                 }
-                            }
+                                _ => {}
+                            },
                             _ => todo!(),
                         }
                         match &select.from[0].relation {

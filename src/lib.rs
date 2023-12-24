@@ -1,9 +1,9 @@
 pub mod cell;
-pub mod sql;
 pub mod column;
 pub mod database;
 pub mod page;
 pub mod record;
+pub mod sql;
 
 pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
     if bytes.is_empty() || bytes.len() > 9 {
