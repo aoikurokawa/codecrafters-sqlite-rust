@@ -28,7 +28,7 @@ impl Sql {
                                     Expr::Identifier(ident) => {
                                         field_name.push(ident.value.to_string());
                                     }
-                                    _ => todo!(),
+                                    _ => {},
                                 }
                             }
                             _ => todo!(),
