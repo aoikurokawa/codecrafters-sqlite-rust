@@ -146,17 +146,27 @@ fn main() -> Result<()> {
                                                     //         .collect();
 
                                                     let fields: Vec<(usize, String)> =
-                                                        create_statement
+                                                        select_statement
                                                             .field_name
+                                                            .clone()
                                                             .into_iter()
                                                             .enumerate()
-                                                            .filter(|(_i, create_field)| {
-                                                                select_statement
-                                                                    .field_name
-                                                                    .contains(create_field)
-                                                            })
-                                                            .map(|(i, create_field)| {
-                                                                (i, create_field)
+                                                            .map(|(_i, select_field)| {
+                                                                let index = if let Some(index) =
+                                                                    create_statement
+                                                                        .field_name
+                                                                        .iter()
+                                                                        .position(|x| {
+                                                                            x.as_str()
+                                                                                == select_field
+                                                                                    .as_str()
+                                                                        }) {
+                                                                    index
+                                                                } else {
+                                                                    0
+                                                                };
+
+                                                                (index, select_field)
                                                             })
                                                             .collect();
 
