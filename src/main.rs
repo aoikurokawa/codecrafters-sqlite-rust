@@ -138,6 +138,13 @@ fn main() -> Result<()> {
                                                         &record.columns[4].data().display(),
                                                     );
 
+                                                    // let select_sets: jjj
+                                                    //     select_statement
+                                                    //         .field_name
+                                                    //         .iter()
+                                                    //         .map(|val| val.as_str())
+                                                    //         .collect();
+
                                                     let fields: Vec<(usize, String)> =
                                                         select_statement
                                                             .field_name
