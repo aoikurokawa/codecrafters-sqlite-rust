@@ -130,7 +130,6 @@ fn main() -> Result<()> {
                                     if select_statement.tbl_name == t_name {
                                         match record.columns[3].data() {
                                             SerialValue::I8(num) => {
-                                                // eprintln!("num: {num}");
                                                 if let Some(page) = db.pages.get(*num as usize - 1)
                                                 {
                                                     let cell_len = page.cell_offsets.len();
@@ -160,27 +159,45 @@ fn main() -> Result<()> {
                                                             })
                                                             .collect();
 
-                                                    for i in 0..cell_len {
-                                                        let record = page.read_cell(i as u16)?;
+                                                    if !select_statement.selection.is_empty() {
+                                                        for i in 0..cell_len {
+                                                            let record =
+                                                                page.read_cell(i as u16)?;
 
-                                                        let mut values = Vec::new();
-                                                        if !select_statement.selection.is_empty() {
-                                                            for (field_idx, field_name) in &fields {
-                                                                if let Some(value) =
-                                                                    select_statement
-                                                                        .selection
-                                                                        .get(field_name)
+                                                            let mut values = Vec::new();
+                                                            for (key, value) in
+                                                                select_statement.selection.iter()
+                                                            {
+                                                                for (field_idx, field_name) in
+                                                                    &fields
                                                                 {
                                                                     let candidate_value = record
                                                                         .columns[*field_idx]
                                                                         .data()
                                                                         .display();
                                                                     if candidate_value == *value {
-                                                                        values.push(value.clone());
+                                                                        let rows: Vec<String> = fields
+                                                                            .iter()
+                                                                            .map(|(i, _field)| {
+                                                                                record.columns[*i]
+                                                                                    .data()
+                                                                                    .display()
+                                                                            })
+                                                                            .collect();
+                                                                        values.push(rows.join("|"));
+
+                                                                        break;
                                                                     }
                                                                 }
                                                             }
-                                                        } else {
+                                                            println!("{}", values.join("|"));
+                                                        }
+                                                    } else {
+                                                        for i in 0..cell_len {
+                                                            let record =
+                                                                page.read_cell(i as u16)?;
+
+                                                            let mut values = Vec::new();
                                                             for (field_idx, _field_name) in &fields
                                                             {
                                                                 values.push(
@@ -189,8 +206,8 @@ fn main() -> Result<()> {
                                                                         .display(),
                                                                 );
                                                             }
+                                                            println!("{}", values.join("|"));
                                                         }
-                                                        println!("{}", values.join("|"));
                                                     }
                                                 }
                                             }
