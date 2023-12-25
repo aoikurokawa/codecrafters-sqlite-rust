@@ -138,12 +138,12 @@ fn main() -> Result<()> {
                                                         &record.columns[4].data().display(),
                                                     );
 
-                                                    let select_sets: HashSet<&str> =
-                                                        select_statement
-                                                            .field_name
-                                                            .iter()
-                                                            .map(|val| val.as_str())
-                                                            .collect();
+                                                    // let select_sets: HashSet<&str> =
+                                                    //     select_statement
+                                                    //         .field_name
+                                                    //         .iter()
+                                                    //         .map(|val| val.as_str())
+                                                    //         .collect();
 
                                                     let fields: Vec<(usize, String)> =
                                                         create_statement
@@ -151,8 +151,9 @@ fn main() -> Result<()> {
                                                             .into_iter()
                                                             .enumerate()
                                                             .filter(|(_i, create_field)| {
-                                                                select_sets
-                                                                    .contains(create_field.as_str())
+                                                                select_statement
+                                                                    .field_name
+                                                                    .contains(create_field)
                                                             })
                                                             .map(|(i, create_field)| {
                                                                 (i, create_field)
