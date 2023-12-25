@@ -1,7 +1,5 @@
 use std::{fs, path::Path};
 
-use anyhow::Context;
-
 use crate::page::Page;
 
 #[derive(Debug, Clone)]

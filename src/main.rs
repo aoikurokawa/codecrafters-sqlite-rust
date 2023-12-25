@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use anyhow::{bail, Result};
 use sqlite_starter_rust::{column::SerialValue, database::Database, sql::Sql};
 
@@ -137,24 +139,27 @@ fn main() -> Result<()> {
                                                         &record.columns[4].data().display(),
                                                     );
 
-                                                    let mut fields = Vec::new();
+                                                    let select_sets: HashSet<&str> =
+                                                        select_statement
+                                                            .field_name
+                                                            .iter()
+                                                            .map(|val| val.as_str())
+                                                            .collect();
 
-                                                    for (i, create_field) in create_statement
-                                                        .field_name
-                                                        .iter()
-                                                        .enumerate()
-                                                    {
-                                                        for select_field in
-                                                            &select_statement.field_name
-                                                        {
-                                                            if *create_field == *select_field {
-                                                                fields.push((
-                                                                    i,
-                                                                    select_field.as_str(),
-                                                                ));
-                                                            }
-                                                        }
-                                                    }
+                                                    let fields: Vec<(usize, String)> =
+                                                        create_statement
+                                                            .field_name
+                                                            .into_iter()
+                                                            .enumerate()
+                                                            .filter(|(_i, create_field)| {
+                                                                select_sets
+                                                                    .contains(create_field.as_str())
+                                                            })
+                                                            .map(|(i, create_field)| {
+                                                                (i, create_field)
+                                                            })
+                                                            .collect();
+
                                                     for i in 0..cell_len {
                                                         let record = page.read_cell(i as u16)?;
 
@@ -164,7 +169,7 @@ fn main() -> Result<()> {
                                                                 if let Some(value) =
                                                                     select_statement
                                                                         .selection
-                                                                        .get(*field_name)
+                                                                        .get(field_name)
                                                                 {
                                                                     let candidate_value = record
                                                                         .columns[*field_idx]
@@ -173,12 +178,6 @@ fn main() -> Result<()> {
                                                                     if candidate_value == *value {
                                                                         values.push(value.clone());
                                                                     }
-                                                                } else {
-                                                                    values.push(
-                                                                        record.columns[*field_idx]
-                                                                            .data()
-                                                                            .display(),
-                                                                    );
                                                                 }
                                                             }
                                                         } else {
