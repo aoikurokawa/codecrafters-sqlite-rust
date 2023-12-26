@@ -79,6 +79,28 @@ impl Page {
 
                 Ok(record)
             }
+            PageType::InteriorTable => {
+                let mut idx = offset;
+                
+                let (npayload, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                    .context("decode varint for payload size")?;
+                idx += bytes_read;
+
+                let (_rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                    .context("decode varint for payload size")?;
+                idx += bytes_read;
+
+                // let end = if npayload as usize > self.buffer.len() {
+                //     self.buffer.len()
+                // } else {
+                //     idx + npayload as usize
+                // };
+                let end = idx + npayload as usize;
+                let payload = &self.buffer[idx..end];
+                let record = Record::new(payload).context("create new record")?;
+
+                Ok(record)
+            }
             _ => todo!(),
         }
     }
@@ -129,6 +151,9 @@ pub enum PageType {
 
     /// A value of 13 (0x0d) means the page is a leaf table b-tree page
     LeafTable = 13,
+
+    /// Any other value for the b-tree page type is an error. 
+    PageError,
 }
 
 impl TryFrom<u8> for PageType {
@@ -140,9 +165,7 @@ impl TryFrom<u8> for PageType {
             5 => Ok(Self::InteriorTable),
             10 => Ok(Self::LeafIndex),
             13 => Ok(Self::LeafTable),
-            num => Err(anyhow::Error::msg(format!(
-                "No corresponding PageType for value: {num}"
-            ))),
+            _ => Ok(Self::PageError),
         }
     }
 }

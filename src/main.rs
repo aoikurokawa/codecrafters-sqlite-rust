@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use anyhow::{bail, Result};
 use sqlite_starter_rust::{column::SerialValue, database::Database, sql::Sql};
 
@@ -55,6 +53,55 @@ fn main() -> Result<()> {
                         };
                     }
                     println!("{tables}");
+                }
+                None => eprintln!("can not read first page"),
+            }
+        }
+        ".index" => {
+            let file_path = &args[1];
+
+            let db = Database::read_file(file_path)?;
+            match db.pages.get(0) {
+                Some(first_page) => {
+                    let mut tables = String::new();
+                    for i in 0..db.tables() {
+                        if let Ok(record) = first_page.read_cell(i) {
+                            match record.columns[0].data() {
+                                SerialValue::String(ref str) => {
+                                    if str != "table" {
+                                        continue;
+                                    }
+                                }
+                                _ => {}
+                            }
+
+                            for i in 0..4 {
+                                eprintln!("Column {i}: {:?}", record.columns[i]);
+                            }
+
+                            match record.columns[2].data() {
+                                SerialValue::String(ref str) => {
+                                    if str == "sqlite_sequence" {
+                                        match record.columns[3].data() {
+                                            SerialValue::I8(num) => {
+                                                // eprintln!("num: {num}");
+                                                if let Some(page) = db.pages.get(*num as usize - 1)
+                                                {
+                                                    let cell_len = page.cell_offsets.len();
+                                                    println!("{:?}", cell_len);
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            };
+
+                            // tables.push_str(&format!("{} ", tbl_name));
+                        };
+                    }
+                    // println!("{tables}");
                 }
                 None => eprintln!("can not read first page"),
             }
@@ -137,13 +184,6 @@ fn main() -> Result<()> {
                                                     let create_statement = Sql::from_str(
                                                         &record.columns[4].data().display(),
                                                     );
-
-                                                    // let select_sets: jjj
-                                                    //     select_statement
-                                                    //         .field_name
-                                                    //         .iter()
-                                                    //         .map(|val| val.as_str())
-                                                    //         .collect();
 
                                                     let fields: Vec<(usize, String)> =
                                                         select_statement
