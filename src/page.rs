@@ -1,4 +1,4 @@
-use anyhow::{bail, Context};
+use anyhow::{anyhow, bail, Context};
 
 use crate::{database::DbHeader, decode_varint, record::Record};
 
@@ -49,7 +49,7 @@ impl Page {
     //     self.cells.get(i).cloned()
     // }
 
-    pub fn read_cell(&self, i: u16) -> anyhow::Result<Record> {
+    pub fn read_cell(&self, i: u16) -> anyhow::Result<Option<Record>> {
         if i >= self.btree_header.ncells {
             bail!("Cell index out of range");
         }
@@ -77,29 +77,34 @@ impl Page {
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;
 
-                Ok(record)
+                Ok(Some(record))
             }
             PageType::InteriorTable => {
-                let mut idx = offset;
-                
-                let (npayload, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
-                    .context("decode varint for payload size")?;
-                idx += bytes_read;
+                // let mut idx = offset;
 
-                let (_rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
-                    .context("decode varint for payload size")?;
-                idx += bytes_read;
+                // let left_child_pointer = u32::from_be_bytes([
+                //     self.buffer[idx],
+                //     self.buffer[idx + 1],
+                //     self.buffer[idx + 2],
+                //     self.buffer[idx + 3],
+                // ]);
+                // idx += 4;
+                // eprintln!("{left_child_pointer}");
+
+                // let (_rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                //     .context("decode varint for payload size")?;
+                // idx += bytes_read;
 
                 // let end = if npayload as usize > self.buffer.len() {
                 //     self.buffer.len()
                 // } else {
                 //     idx + npayload as usize
                 // };
-                let end = idx + npayload as usize;
-                let payload = &self.buffer[idx..end];
-                let record = Record::new(payload).context("create new record")?;
+                // let end = idx + npayload as usize;
+                // let payload = &self.buffer[idx..end];
+                // let record = Record::new(payload).context("create new record")?;
 
-                Ok(record)
+                Ok(None)
             }
             _ => todo!(),
         }
@@ -152,7 +157,7 @@ pub enum PageType {
     /// A value of 13 (0x0d) means the page is a leaf table b-tree page
     LeafTable = 13,
 
-    /// Any other value for the b-tree page type is an error. 
+    /// Any other value for the b-tree page type is an error.
     PageError,
 }
 

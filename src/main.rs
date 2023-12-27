@@ -29,7 +29,7 @@ fn main() -> Result<()> {
                 Some(first_page) => {
                     let mut tables = String::new();
                     for i in 0..db.tables() {
-                        if let Ok(record) = first_page.read_cell(i) {
+                        if let Ok(Some(record)) = first_page.read_cell(i) {
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
                                     if str != "table" {
@@ -65,7 +65,7 @@ fn main() -> Result<()> {
                 Some(first_page) => {
                     let mut tables = String::new();
                     for i in 0..db.tables() {
-                        if let Ok(record) = first_page.read_cell(i) {
+                        if let Ok(Some(record)) = first_page.read_cell(i) {
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
                                     if str != "table" {
@@ -113,7 +113,7 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..db.tables() {
-                    if let Ok(record) = first_page.read_cell(i) {
+                    if let Ok(Some(record)) = first_page.read_cell(i) {
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
                                 if str != "table" {
@@ -158,7 +158,7 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..db.tables() {
-                    if let Ok(record) = first_page.read_cell(i) {
+                    if let Ok(Some(record)) = first_page.read_cell(i) {
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
                                 if str != "table" {
@@ -212,22 +212,28 @@ fn main() -> Result<()> {
 
                                                     if !select_statement.selection.is_empty() {
                                                         for i in 0..cell_len {
-                                                            let record =
-                                                                page.read_cell(i as u16)?;
-
-                                                            let mut values = Vec::new();
-                                                            for (key, value) in
-                                                                select_statement.selection.iter()
+                                                            if let Ok(Some(record)) =
+                                                                page.read_cell(i as u16)
                                                             {
-                                                                for (field_idx, field_name) in
-                                                                    &fields
+                                                                // let record =
+                                                                //     page.read_cell(i as u16)?;
+
+                                                                let mut values = Vec::new();
+                                                                for (key, value) in select_statement
+                                                                    .selection
+                                                                    .iter()
                                                                 {
-                                                                    let candidate_value = record
-                                                                        .columns[*field_idx]
-                                                                        .data()
-                                                                        .display();
-                                                                    if candidate_value == *value {
-                                                                        let rows: Vec<String> = fields
+                                                                    for (field_idx, field_name) in
+                                                                        &fields
+                                                                    {
+                                                                        let candidate_value =
+                                                                            record.columns
+                                                                                [*field_idx]
+                                                                                .data()
+                                                                                .display();
+                                                                        if candidate_value == *value
+                                                                        {
+                                                                            let rows: Vec<String> = fields
                                                                             .iter()
                                                                             .map(|(i, _field)| {
                                                                                 record.columns[*i]
@@ -235,29 +241,35 @@ fn main() -> Result<()> {
                                                                                     .display()
                                                                             })
                                                                             .collect();
-                                                                        values.push(rows.join("|"));
+                                                                            values.push(
+                                                                                rows.join("|"),
+                                                                            );
 
-                                                                        break;
+                                                                            break;
+                                                                        }
                                                                     }
                                                                 }
+                                                                println!("{}", values.join("|"));
                                                             }
-                                                            println!("{}", values.join("|"));
                                                         }
                                                     } else {
                                                         for i in 0..cell_len {
-                                                            let record =
-                                                                page.read_cell(i as u16)?;
-
-                                                            let mut values = Vec::new();
-                                                            for (field_idx, _field_name) in &fields
+                                                            if let Ok(Some(record)) =
+                                                                page.read_cell(i as u16)
                                                             {
-                                                                values.push(
-                                                                    record.columns[*field_idx]
-                                                                        .data()
-                                                                        .display(),
-                                                                );
+                                                                let mut values = Vec::new();
+
+                                                                for (field_idx, _field_name) in
+                                                                    &fields
+                                                                {
+                                                                    values.push(
+                                                                        record.columns[*field_idx]
+                                                                            .data()
+                                                                            .display(),
+                                                                    );
+                                                                }
+                                                                println!("{}", values.join("|"));
                                                             }
-                                                            println!("{}", values.join("|"));
                                                         }
                                                     }
                                                 }
