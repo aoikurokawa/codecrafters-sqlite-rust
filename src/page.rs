@@ -110,7 +110,7 @@ impl Page {
         }
     }
 
-    pub fn read_page(&self, i: u16) -> anyhow::Result<usize> {
+    pub fn read_page_idx(&self, i: u16) -> anyhow::Result<usize> {
         if i >= self.btree_header.ncells {
             bail!("Cell index out of range");
         }

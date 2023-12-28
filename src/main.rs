@@ -208,103 +208,26 @@ fn main() -> Result<()> {
                                                             })
                                                             .collect();
 
-                                                    eprintln!("Fields: {fields:?}");
-
                                                     if !select_statement.selection.is_empty() {
                                                         for i in 0..cell_len {
                                                             match page.page_type() {
                                                                 PageType::LeafTable => {
-                                                                    if let Ok(Some(record)) =
-                                                                        page.read_cell(i as u16)
-                                                                    {
-                                                                        let mut values = Vec::new();
-                                                                        for (_key, value) in
-                                                                            select_statement
-                                                                                .selection
-                                                                                .iter()
-                                                                        {
-                                                                            for (
-                                                                                field_idx,
-                                                                                _field_name,
-                                                                            ) in &fields
-                                                                            {
-                                                                                let candidate_value =
-                                                                                    record.columns
-                                                                                        [*field_idx]
-                                                                                        .data()
-                                                                                        .display();
-                                                                                if candidate_value
-                                                                                    == *value
-                                                                                {
-                                                                                    let rows: Vec<String> = fields
-                                                                            .iter()
-                                                                            .map(|(i, _field)| {
-                                                                                record.columns[*i]
-                                                                                    .data()
-                                                                                    .display()
-                                                                            })
-                                                                            .collect();
-                                                                                    values.push(
-                                                                                        rows.join(
-                                                                                            "|",
-                                                                                        ),
-                                                                                    );
-
-                                                                                    break;
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        println!(
-                                                                            "{}",
-                                                                            values.join("|")
-                                                                        );
-                                                                    }
+                                                                    select_statement.print_rows(
+                                                                        page, i as u16, &fields,
+                                                                    );
                                                                 }
                                                                 PageType::InteriorTable => {
-                                                                    if let Ok(Some(record)) =
-                                                                        page.read_cell(i as u16)
+                                                                    if let Ok(idx) =
+                                                                        page.read_page_idx(i as u16)
                                                                     {
-                                                                        let mut values = Vec::new();
-                                                                        for (_key, value) in
-                                                                            select_statement
-                                                                                .selection
-                                                                                .iter()
+                                                                        if let Some(next_page) =
+                                                                            db.pages.get(idx)
                                                                         {
-                                                                            for (
-                                                                                field_idx,
-                                                                                _field_name,
-                                                                            ) in &fields
-                                                                            {
-                                                                                let candidate_value =
-                                                                                    record.columns
-                                                                                        [*field_idx]
-                                                                                        .data()
-                                                                                        .display();
-                                                                                if candidate_value
-                                                                                    == *value
-                                                                                {
-                                                                                    let rows: Vec<String> = fields
-                                                                            .iter()
-                                                                            .map(|(i, _field)| {
-                                                                                record.columns[*i]
-                                                                                    .data()
-                                                                                    .display()
-                                                                            })
-                                                                            .collect();
-                                                                                    values.push(
-                                                                                        rows.join(
-                                                                                            "|",
-                                                                                        ),
-                                                                                    );
-
-                                                                                    break;
-                                                                                }
-                                                                            }
+                                                                            println!(
+                                                                                "Next page type: {:?}",
+                                                                                next_page.page_type()
+                                                                            );
                                                                         }
-                                                                        println!(
-                                                                            "{}",
-                                                                            values.join("|")
-                                                                        );
                                                                     }
                                                                 }
                                                                 _ => {}

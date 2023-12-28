@@ -6,6 +6,8 @@ use sqlparser::{
     parser::Parser,
 };
 
+use crate::page::Page;
+
 pub struct Sql {
     pub field_name: Vec<String>,
     pub selection: HashMap<String, String>,
@@ -119,6 +121,26 @@ impl Sql {
             field_name,
             selection,
             tbl_name,
+        }
+    }
+    pub fn print_rows(&self, page: &Page, i: u16, fields: &Vec<(usize, String)>) {
+        if let Ok(Some(record)) = page.read_cell(i) {
+            let mut values = Vec::new();
+            for (_key, value) in self.selection.iter() {
+                for (field_idx, _field_name) in fields {
+                    let candidate_value = record.columns[*field_idx].data().display();
+                    if candidate_value == *value {
+                        let rows: Vec<String> = fields
+                            .iter()
+                            .map(|(i, _field)| record.columns[*i].data().display())
+                            .collect();
+                        values.push(rows.join("|"));
+
+                        break;
+                    }
+                }
+            }
+            println!("{}", values.join("|"));
         }
     }
 }
