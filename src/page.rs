@@ -45,9 +45,9 @@ impl Page {
         }
     }
 
-    // pub fn cell(&self, i: usize) -> Option<Cell> {
-    //     self.cells.get(i).cloned()
-    // }
+    pub fn page_type(&self) -> &PageType {
+        &self.btree_header.page_type
+    }
 
     pub fn read_cell(&self, i: u16) -> anyhow::Result<Option<Record>> {
         if i >= self.btree_header.ncells {
@@ -80,7 +80,7 @@ impl Page {
                 Ok(Some(record))
             }
             PageType::InteriorTable => {
-                // let mut idx = offset;
+                // let idx = offset;
 
                 // let left_child_pointer = u32::from_be_bytes([
                 //     self.buffer[idx],
@@ -105,6 +105,30 @@ impl Page {
                 // let record = Record::new(payload).context("create new record")?;
 
                 Ok(None)
+            }
+            _ => todo!(),
+        }
+    }
+
+    pub fn read_page(&self, i: u16) -> anyhow::Result<usize> {
+        if i >= self.btree_header.ncells {
+            bail!("Cell index out of range");
+        }
+
+        let offset = self.cell_offsets[i as usize] as usize;
+
+        match self.btree_header.page_type {
+            PageType::InteriorTable => {
+                let idx = offset;
+
+                let left_child_pointer = u32::from_be_bytes([
+                    self.buffer[idx],
+                    self.buffer[idx + 1],
+                    self.buffer[idx + 2],
+                    self.buffer[idx + 3],
+                ]);
+
+                Ok(left_child_pointer as usize)
             }
             _ => todo!(),
         }

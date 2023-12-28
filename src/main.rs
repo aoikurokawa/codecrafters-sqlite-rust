@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use sqlite_starter_rust::{column::SerialValue, database::Database, sql::Sql};
+use sqlite_starter_rust::{column::SerialValue, database::Database, page::PageType, sql::Sql};
 
 fn main() -> Result<()> {
     // Parse arguments
@@ -63,7 +63,6 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             match db.pages.get(0) {
                 Some(first_page) => {
-                    let mut tables = String::new();
                     for i in 0..db.tables() {
                         if let Ok(Some(record)) = first_page.read_cell(i) {
                             match record.columns[0].data() {
@@ -97,11 +96,8 @@ fn main() -> Result<()> {
                                 }
                                 _ => {}
                             };
-
-                            // tables.push_str(&format!("{} ", tbl_name));
                         };
                     }
-                    // println!("{tables}");
                 }
                 None => eprintln!("can not read first page"),
             }
@@ -181,6 +177,8 @@ fn main() -> Result<()> {
                                                 {
                                                     let cell_len = page.cell_offsets.len();
 
+                                                    eprintln!("Cell length: {cell_len}");
+
                                                     let create_statement = Sql::from_str(
                                                         &record.columns[4].data().display(),
                                                     );
@@ -210,30 +208,35 @@ fn main() -> Result<()> {
                                                             })
                                                             .collect();
 
+                                                    eprintln!("Fields: {fields:?}");
+
                                                     if !select_statement.selection.is_empty() {
                                                         for i in 0..cell_len {
-                                                            if let Ok(Some(record)) =
-                                                                page.read_cell(i as u16)
-                                                            {
-                                                                // let record =
-                                                                //     page.read_cell(i as u16)?;
-
-                                                                let mut values = Vec::new();
-                                                                for (key, value) in select_statement
-                                                                    .selection
-                                                                    .iter()
-                                                                {
-                                                                    for (field_idx, field_name) in
-                                                                        &fields
+                                                            match page.page_type() {
+                                                                PageType::LeafTable => {
+                                                                    if let Ok(Some(record)) =
+                                                                        page.read_cell(i as u16)
                                                                     {
-                                                                        let candidate_value =
-                                                                            record.columns
-                                                                                [*field_idx]
-                                                                                .data()
-                                                                                .display();
-                                                                        if candidate_value == *value
+                                                                        let mut values = Vec::new();
+                                                                        for (_key, value) in
+                                                                            select_statement
+                                                                                .selection
+                                                                                .iter()
                                                                         {
-                                                                            let rows: Vec<String> = fields
+                                                                            for (
+                                                                                field_idx,
+                                                                                _field_name,
+                                                                            ) in &fields
+                                                                            {
+                                                                                let candidate_value =
+                                                                                    record.columns
+                                                                                        [*field_idx]
+                                                                                        .data()
+                                                                                        .display();
+                                                                                if candidate_value
+                                                                                    == *value
+                                                                                {
+                                                                                    let rows: Vec<String> = fields
                                                                             .iter()
                                                                             .map(|(i, _field)| {
                                                                                 record.columns[*i]
@@ -241,15 +244,70 @@ fn main() -> Result<()> {
                                                                                     .display()
                                                                             })
                                                                             .collect();
-                                                                            values.push(
-                                                                                rows.join("|"),
-                                                                            );
+                                                                                    values.push(
+                                                                                        rows.join(
+                                                                                            "|",
+                                                                                        ),
+                                                                                    );
 
-                                                                            break;
+                                                                                    break;
+                                                                                }
+                                                                            }
                                                                         }
+                                                                        println!(
+                                                                            "{}",
+                                                                            values.join("|")
+                                                                        );
                                                                     }
                                                                 }
-                                                                println!("{}", values.join("|"));
+                                                                PageType::InteriorTable => {
+                                                                    if let Ok(Some(record)) =
+                                                                        page.read_cell(i as u16)
+                                                                    {
+                                                                        let mut values = Vec::new();
+                                                                        for (_key, value) in
+                                                                            select_statement
+                                                                                .selection
+                                                                                .iter()
+                                                                        {
+                                                                            for (
+                                                                                field_idx,
+                                                                                _field_name,
+                                                                            ) in &fields
+                                                                            {
+                                                                                let candidate_value =
+                                                                                    record.columns
+                                                                                        [*field_idx]
+                                                                                        .data()
+                                                                                        .display();
+                                                                                if candidate_value
+                                                                                    == *value
+                                                                                {
+                                                                                    let rows: Vec<String> = fields
+                                                                            .iter()
+                                                                            .map(|(i, _field)| {
+                                                                                record.columns[*i]
+                                                                                    .data()
+                                                                                    .display()
+                                                                            })
+                                                                            .collect();
+                                                                                    values.push(
+                                                                                        rows.join(
+                                                                                            "|",
+                                                                                        ),
+                                                                                    );
+
+                                                                                    break;
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        println!(
+                                                                            "{}",
+                                                                            values.join("|")
+                                                                        );
+                                                                    }
+                                                                }
+                                                                _ => {}
                                                             }
                                                         }
                                                     } else {
