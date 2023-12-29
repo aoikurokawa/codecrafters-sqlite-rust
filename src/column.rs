@@ -81,7 +81,7 @@ impl SerialType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SerialValue {
     Null,
     I8(i8),

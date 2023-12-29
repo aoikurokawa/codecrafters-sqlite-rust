@@ -107,7 +107,11 @@ impl Sql {
         if let Ok(Some((rowid, record))) = page.read_cell(i) {
             let mut values = Vec::new();
             for (_key, value) in self.selection.iter() {
-                for (_column_i, column) in record.columns.iter().enumerate() {
+                for (column_i, column) in record.columns.iter().enumerate() {
+                    if column_i == 0 && *column.data() != SerialValue::Null {
+                        break;
+                    }
+
                     if let SerialValue::String(candidate_value) = column.data() {
                         if candidate_value == value {
                             let rows: Vec<String> = fields
