@@ -216,8 +216,7 @@ fn main() -> Result<()> {
                                                         if !select_statement.selection.is_empty() {
                                                             for i in 0..cell_len {
                                                                 match page.page_type() {
-                                                                    PageType::LeafTable
-                                                                    | PageType::LeafIndex => {
+                                                                    PageType::LeafTable => {
                                                                         select_statement
                                                                             .print_rows(
                                                                                 page,
@@ -226,6 +225,17 @@ fn main() -> Result<()> {
                                                                                 &mut row_set,
                                                                                 &mut rowid_set,
                                                                             );
+                                                                    }
+
+                                                                    PageType::LeafIndex => {
+                                                                        // select_statement
+                                                                        //     .print_rows(
+                                                                        //         page,
+                                                                        //         i as u16,
+                                                                        //         &fields,
+                                                                        //         &mut row_set,
+                                                                        //         &mut rowid_set,
+                                                                        //     );
                                                                     }
                                                                     PageType::InteriorTable
                                                                     | PageType::InteriorIndex => {

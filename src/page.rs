@@ -176,13 +176,13 @@ impl Page {
 #[derive(Debug, Clone)]
 pub struct BTreePageHeader {
     /// The one-byte flag at offset 0 indicating the b-tree page type
-    page_type: PageType,
+    pub page_type: PageType,
 
-    freeblock_offset: u16,
+    pub freeblock_offset: u16,
     pub ncells: u16,
-    cells_start: u16,
-    nfragemented_free: u8,
-    right_most_pointer: u32,
+    pub cells_start: u16,
+    pub nfragemented_free: u8,
+    pub right_most_pointer: u32,
 }
 
 impl BTreePageHeader {

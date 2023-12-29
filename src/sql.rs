@@ -6,10 +6,7 @@ use sqlparser::{
     parser::Parser,
 };
 
-use crate::{
-    column::{SerialType, SerialValue},
-    page::Page,
-};
+use crate::{column::SerialValue, page::Page};
 
 #[derive(Debug)]
 pub struct Sql {
@@ -99,27 +96,17 @@ impl Sql {
         }
     }
 
-    // [(0, "id"), (1, "name")]
     pub fn print_rows(
         &self,
         page: &Page,
         i: u16,
         fields: &Vec<(usize, String)>,
         row_set: &mut HashSet<String>,
-        rowid_set: &mut HashSet<i64>,
+        _rowid_set: &mut HashSet<i64>,
     ) {
-        // eprintln!("Fields: {fields:?}");
         if let Ok(Some((rowid, record))) = page.read_cell(i) {
             let mut values = Vec::new();
-            // value = Pink Eyes
             for (_key, value) in self.selection.iter() {
-                // Column 0: Column { key: Null, data: Null }
-                // Column 1: Column { key: String(20), data: String("Thanatos (New Earth)") }
-                // Column 2: Column { key: String(9), data: String("Blue Eyes") }
-                // Column 3: Column { key: String(10), data: String("Blond Hair") }
-                // Column 4: Column { key: I8, data: I8(7) }
-                // Column 5: Column { key: String(14), data: String("1970, December") }
-                // Column 6: Column { key: String(4), data: String("1970") }
                 for (_column_i, column) in record.columns.iter().enumerate() {
                     if let SerialValue::String(candidate_value) = column.data() {
                         if candidate_value == value {
@@ -150,10 +137,9 @@ impl Sql {
             }
 
             if !values.is_empty() {
-                if rowid_set.insert(rowid) {
-                    row_set.insert(values.join("|"));
-                }
-                // println!("{}", values.join("|"));
+                // if rowid_set.insert(rowid) {
+                row_set.insert(values.join("|"));
+                // }
             }
         }
     }
