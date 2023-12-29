@@ -155,6 +155,8 @@ fn main() -> Result<()> {
                                         Sql::from_str(&record.columns[4].data().display());
                                     if let SerialValue::I8(num) = record.columns[3].data() {
                                         let mut page_idxes: Vec<usize> = vec![*num as usize - 1];
+                                        let mut rowids = Vec::new();
+
                                         while let Some(page_idx) = page_idxes.pop() {
                                             if let Some(page) = db.pages.get(page_idx) {
                                                 let cell_len = page.cell_offsets.len();
@@ -164,23 +166,35 @@ fn main() -> Result<()> {
 
                                                     match page.page_type() {
                                                         PageType::LeafIndex => {
-                                                             index_statement
-                                                                 .print_row_id(page, i as u16);
+                                                            index_statement.print_row_id(
+                                                                page,
+                                                                i as u16,
+                                                                &select_statement,
+                                                                &mut rowids,
+                                                            );
                                                         }
-                                                        // PageType::InteriorIndex => {
-                                                        //     if let Ok(idx) =
-                                                        //         page.read_page_idx(i as u16)
-                                                        //     {
-                                                        //         page_idxes.push(idx);
-                                                        //     }
+                                                        PageType::InteriorIndex => {
+                                                            if let Ok(idx) =
+                                                                page.read_page_idx(i as u16)
+                                                            {
+                                                                page_idxes.push(idx);
+                                                            }
 
-                                                        //     index_statement
-                                                        //         .print_row_id(page, i as u16);
-                                                        // }
-                                                        // PageType::InteriorTable => {
-                                                        //     index_statement
-                                                        //         .print_row_id(page, i as u16);
-                                                        // }
+                                                            index_statement.print_row_id(
+                                                                page,
+                                                                i as u16,
+                                                                &select_statement,
+                                                                &mut rowids,
+                                                            );
+                                                       }
+                                                        PageType::InteriorTable => {
+                                                            index_statement.print_row_id(
+                                                                page,
+                                                                i as u16,
+                                                                &select_statement,
+                                                                &mut rowids,
+                                                            );
+                                                        }
                                                         PageType::PageError => {
                                                             bail!("Page Type Error");
                                                         }
@@ -189,6 +203,8 @@ fn main() -> Result<()> {
                                                 }
                                             }
                                         }
+
+                                        eprintln!("Rowids: {rowids:?}");
                                     }
 
                                     break;

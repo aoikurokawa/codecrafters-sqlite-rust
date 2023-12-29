@@ -196,16 +196,56 @@ impl Sql {
         }
     }
 
-    pub fn print_row_id(&self, page: &Page, i: u16) {
+    pub fn print_row_id(&self, page: &Page, i: u16, select_statement: &Sql, rowids: &mut Vec<i64>) {
         match page.read_cell(i) {
             Ok((Some(rowid), Some(record))) => {
-                eprintln!("{rowid}");
+                for (_key, value) in select_statement.selection.iter() {
+                    if let SerialValue::String(country) = record.columns[0].data() {
+                        if value == country {
+                            match record.columns[1].data() {
+                                SerialValue::I8(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                SerialValue::I16(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                SerialValue::I24(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                SerialValue::I32(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                _ => todo!(),
+                            }
+                        }
+                    }
+                }
             }
             Ok((Some(rowid), None)) => {
                 eprintln!("{rowid}");
             }
             Ok((None, Some(record))) => {
-                // eprintln!("{record:?}");
+                for (_key, value) in select_statement.selection.iter() {
+                    if let SerialValue::String(country) = record.columns[0].data() {
+                        if value == country {
+                            match record.columns[1].data() {
+                                SerialValue::I8(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                SerialValue::I16(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                SerialValue::I24(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                SerialValue::I32(num) => {
+                                    rowids.push(*num as i64);
+                                }
+                                _ => todo!(),
+                            }
+                        }
+                    }
+                }
             }
             Ok((None, None)) => {
                 // eprintln!("");
