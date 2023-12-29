@@ -105,7 +105,8 @@ impl Sql {
         page: &Page,
         i: u16,
         fields: &Vec<(usize, String)>,
-        set: &mut HashSet<String>,
+        row_set: &mut HashSet<String>,
+        rowid_set: &mut HashSet<i64>,
     ) {
         // eprintln!("Fields: {fields:?}");
         if let Ok(Some((rowid, record))) = page.read_cell(i) {
@@ -124,11 +125,17 @@ impl Sql {
                         if candidate_value == value {
                             let rows: Vec<String> = fields
                                 .iter()
-                                .map(|(i, _field)| record.columns[*i].data().display())
+                                .map(|(i, _field)| {
+                                    if *i == 0 {
+                                        String::new()
+                                    } else {
+                                        record.columns[*i].data().display()
+                                    }
+                                })
                                 .collect();
 
                             let con_row = if fields[0].0 == 0 {
-                                format!("{rowid}|{}", rows.join("|"))
+                                format!("{rowid}{}", rows.join("|"))
                             } else {
                                 rows.join("|")
                             };
@@ -143,7 +150,9 @@ impl Sql {
             }
 
             if !values.is_empty() {
-                set.insert(values.join("|"));
+                if rowid_set.insert(rowid) {
+                    row_set.insert(values.join("|"));
+                }
                 // println!("{}", values.join("|"));
             }
         }

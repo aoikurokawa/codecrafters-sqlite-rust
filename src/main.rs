@@ -206,7 +206,8 @@ fn main() -> Result<()> {
 
                                                 let mut page_idxes: Vec<usize> =
                                                     vec![*num as usize - 1];
-                                                let mut set = HashSet::new();
+                                                let mut row_set = HashSet::new();
+                                                let mut rowid_set = HashSet::new();
 
                                                 while let Some(page_idx) = page_idxes.pop() {
                                                     if let Some(page) = db.pages.get(page_idx) {
@@ -219,8 +220,11 @@ fn main() -> Result<()> {
                                                                     | PageType::LeafIndex => {
                                                                         select_statement
                                                                             .print_rows(
-                                                                                page, i as u16,
-                                                                                &fields, &mut set,
+                                                                                page,
+                                                                                i as u16,
+                                                                                &fields,
+                                                                                &mut row_set,
+                                                                                &mut rowid_set,
                                                                             );
                                                                     }
                                                                     PageType::InteriorTable
@@ -262,7 +266,7 @@ fn main() -> Result<()> {
                                                         }
                                                     }
                                                 }
-                                                set.iter().for_each(|str| println!("{str}"));
+                                                row_set.iter().for_each(|str| println!("{str}"));
                                             }
                                             _ => {}
                                         }
