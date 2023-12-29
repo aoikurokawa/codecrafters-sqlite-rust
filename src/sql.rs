@@ -100,7 +100,13 @@ impl Sql {
     }
 
     // [(0, "id"), (1, "name")]
-    pub fn print_rows(&self, page: &Page, i: u16, fields: &Vec<(usize, String)>, set: &mut HashSet<String>) {
+    pub fn print_rows(
+        &self,
+        page: &Page,
+        i: u16,
+        fields: &Vec<(usize, String)>,
+        set: &mut HashSet<String>,
+    ) {
         // eprintln!("Fields: {fields:?}");
         if let Ok(Some((rowid, record))) = page.read_cell(i) {
             let mut values = Vec::new();
@@ -120,7 +126,12 @@ impl Sql {
                                 .iter()
                                 .map(|(i, _field)| record.columns[*i].data().display())
                                 .collect();
-                            let con_row = format!("{rowid}{}", rows.join("|"));
+
+                            let con_row = if fields[0].0 == 0 {
+                                format!("{rowid}{}", rows.join("|"))
+                            } else {
+                                "".to_string()
+                            };
 
                             if !values.contains(&con_row) {
                                 values.push(con_row)
