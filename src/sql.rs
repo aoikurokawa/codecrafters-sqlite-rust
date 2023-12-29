@@ -128,7 +128,7 @@ impl Sql {
                                 .collect();
 
                             let con_row = if fields[0].0 == 0 {
-                                format!("{rowid}{}", rows.join("|"))
+                                format!("{rowid}|{}", rows.join("|"))
                             } else {
                                 rows.join("|")
                             };
