@@ -173,42 +173,40 @@ fn main() -> Result<()> {
                                     if select_statement.tbl_name == t_name {
                                         match record.columns[3].data() {
                                             SerialValue::I8(num) => {
+                                                let create_statement = Sql::from_str(
+                                                    &record.columns[4].data().display(),
+                                                );
+
+                                                let fields: Vec<(usize, String)> = select_statement
+                                                    .field_name
+                                                    .clone()
+                                                    .into_iter()
+                                                    .enumerate()
+                                                    .map(|(_i, select_field)| {
+                                                        let index = if let Some(index) =
+                                                            create_statement
+                                                                .field_name
+                                                                .iter()
+                                                                .position(|x| {
+                                                                    x.as_str()
+                                                                        == select_field.as_str()
+                                                                }) {
+                                                            index
+                                                        } else {
+                                                            0
+                                                        };
+
+                                                        (index, select_field)
+                                                    })
+                                                    .collect();
                                                 let mut page_idxes: Vec<usize> =
                                                     vec![*num as usize - 1];
+
                                                 while let Some(page_idx) = page_idxes.pop() {
                                                     if let Some(page) = db.pages.get(page_idx) {
                                                         let cell_len = page.cell_offsets.len();
 
                                                         eprintln!("Cell length: {cell_len}");
-
-                                                        let create_statement = Sql::from_str(
-                                                            &record.columns[4].data().display(),
-                                                        );
-
-                                                        let fields: Vec<(usize, String)> =
-                                                            select_statement
-                                                                .field_name
-                                                                .clone()
-                                                                .into_iter()
-                                                                .enumerate()
-                                                                .map(|(_i, select_field)| {
-                                                                    let index = if let Some(index) =
-                                                                        create_statement
-                                                                            .field_name
-                                                                            .iter()
-                                                                            .position(|x| {
-                                                                                x.as_str()
-                                                                                    == select_field
-                                                                                        .as_str()
-                                                                            }) {
-                                                                        index
-                                                                    } else {
-                                                                        0
-                                                                    };
-
-                                                                    (index, select_field)
-                                                                })
-                                                                .collect();
 
                                                         if !select_statement.selection.is_empty() {
                                                             for i in 0..cell_len {

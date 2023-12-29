@@ -101,6 +101,7 @@ impl SerialValue {
     pub fn display(&self) -> String {
         match self {
             SerialValue::String(txt) => txt.to_string(),
+            SerialValue::Blob(bytes) => String::from_utf8(bytes.to_vec()).expect("parse to String"),
             _ => todo!(),
         }
     }

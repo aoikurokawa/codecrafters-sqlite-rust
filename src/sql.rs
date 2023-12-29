@@ -6,7 +6,7 @@ use sqlparser::{
     parser::Parser,
 };
 
-use crate::page::Page;
+use crate::{page::Page, column::SerialValue};
 
 pub struct Sql {
     pub field_name: Vec<String>,
@@ -78,34 +78,9 @@ impl Sql {
                     _ => todo!(),
                 },
                 Statement::CreateTable {
-                    or_replace,
-                    temporary,
-                    external,
-                    global,
-                    if_not_exists,
-                    transient,
                     name,
                     columns,
-                    constraints,
-                    hive_distribution,
-                    hive_formats,
-                    table_properties,
-                    with_options,
-                    file_format,
-                    location,
-                    query,
-                    without_rowid,
-                    like,
-                    clone,
-                    engine,
-                    comment,
-                    auto_increment_offset,
-                    default_charset,
-                    collation,
-                    on_commit,
-                    on_cluster,
-                    order_by,
-                    strict,
+                    ..
                 } => {
                     field_name = columns
                         .iter()
@@ -128,15 +103,17 @@ impl Sql {
             let mut values = Vec::new();
             for (_key, value) in self.selection.iter() {
                 for (field_idx, _field_name) in fields {
-                    let candidate_value = record.columns[*field_idx].data().display();
-                    if candidate_value == *value {
-                        let rows: Vec<String> = fields
-                            .iter()
-                            .map(|(i, _field)| record.columns[*i].data().display())
-                            .collect();
-                        values.push(rows.join("|"));
+                    if let SerialValue::String(candidate_value) = record.columns[*field_idx].data()
+                    {
+                        if candidate_value == value {
+                            let rows: Vec<String> = fields
+                                .iter()
+                                .map(|(i, _field)| record.columns[*i].data().display())
+                                .collect();
+                            values.push(rows.join("|"));
 
-                        break;
+                            break;
+                        }
                     }
                 }
             }
