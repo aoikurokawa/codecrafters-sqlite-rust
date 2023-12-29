@@ -51,7 +51,7 @@ impl Page {
         &self.btree_header.page_type
     }
 
-    pub fn read_cell(&self, i: u16) -> anyhow::Result<Option<(i64, Record)>> {
+    pub fn read_cell(&self, i: u16) -> anyhow::Result<(Option<i64>, Option<Record>)> {
         if i >= self.btree_header.ncells {
             bail!("Cell index out of range");
         }
@@ -79,7 +79,7 @@ impl Page {
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;
 
-                Ok(Some((rowid, record)))
+                Ok((Some(rowid), Some(record)))
             }
             PageType::LeafIndex => {
                 let mut idx = offset;
@@ -92,10 +92,24 @@ impl Page {
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;
 
-                Ok(Some((0, record)))
+                Ok((None, Some(record)))
             }
             PageType::InteriorTable => {
-                Ok(None)
+                let mut idx = offset;
+
+                let _left_child_pointer = u32::from_be_bytes([
+                    self.buffer[idx],
+                    self.buffer[idx + 1],
+                    self.buffer[idx + 2],
+                    self.buffer[idx + 3],
+                ]);
+                idx += 4;
+
+                let (rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                    .context("decode varint for payload size")?;
+                // idx += bytes_read;
+
+                Ok((Some(rowid), None))
             }
             PageType::InteriorIndex => {
                 let mut idx = offset;
@@ -116,7 +130,7 @@ impl Page {
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;
 
-                Ok(Some((0, record)))
+                Ok((None, Some(record)))
             }
             PageType::PageError => {
                 bail!("can not read cell");

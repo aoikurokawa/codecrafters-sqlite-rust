@@ -33,7 +33,7 @@ fn main() -> Result<()> {
                 Some(first_page) => {
                     let mut tables = String::new();
                     for i in 0..first_page.btree_header.ncells() {
-                        if let Ok(Some((_, record))) = first_page.read_cell(i) {
+                        if let Ok((_, Some(record))) = first_page.read_cell(i) {
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
                                     if str != "table" {
@@ -61,6 +61,37 @@ fn main() -> Result<()> {
                 None => eprintln!("can not read first page"),
             }
         }
+        ".index" => {
+            let file_path = &args[1];
+
+            let db = Database::read_file(file_path)?;
+            match db.pages.get(0) {
+                Some(first_page) => {
+                    for i in 0..first_page.btree_header.ncells() {
+                        if let Ok((_, Some(record))) = first_page.read_cell(i) {
+                            match record.columns[0].data() {
+                                SerialValue::String(ref str) => {
+                                    if str == "index" {
+                                        match record.columns[3].data() {
+                                            SerialValue::I8(num) => {
+                                                if let Some(page) = db.pages.get(*num as usize - 1)
+                                                {
+                                                    let cell_len = page.cell_offsets.len();
+                                                    println!("{:?}", cell_len);
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        };
+                    }
+                }
+                None => eprintln!("can not read first page"),
+            }
+        }
         query if query.to_lowercase().starts_with("select count(*)") => {
             let file_path = &args[1];
             let select_statement = Sql::from_str(query);
@@ -68,7 +99,7 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..first_page.btree_header.ncells() {
-                    if let Ok(Some((_, record))) = first_page.read_cell(i) {
+                    if let Ok((_, Some(record))) = first_page.read_cell(i) {
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
                                 if str != "table" {
@@ -113,13 +144,57 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..first_page.btree_header.ncells() {
-                    if let Ok(Some((_, record))) = first_page.read_cell(i) {
+                    if let Ok((_, Some(record))) = first_page.read_cell(i) {
                         match record.columns[0].data() {
-                            SerialValue::String(ref str) => {
-                                if str != "table" {
+                            SerialValue::String(str) => match str.as_str() {
+                                "table" => {
                                     continue;
                                 }
-                            }
+                                "index" => {
+                                    let index_statement =
+                                        Sql::from_str(&record.columns[4].data().display());
+                                    if let SerialValue::I8(num) = record.columns[3].data() {
+                                        let mut page_idxes: Vec<usize> = vec![*num as usize - 1];
+                                        while let Some(page_idx) = page_idxes.pop() {
+                                            if let Some(page) = db.pages.get(page_idx) {
+                                                let cell_len = page.cell_offsets.len();
+
+                                                for i in 0..cell_len {
+                                                    // eprintln!("{:?}", page.page_type());
+
+                                                    match page.page_type() {
+                                                        PageType::LeafIndex => {
+                                                             index_statement
+                                                                 .print_row_id(page, i as u16);
+                                                        }
+                                                        // PageType::InteriorIndex => {
+                                                        //     if let Ok(idx) =
+                                                        //         page.read_page_idx(i as u16)
+                                                        //     {
+                                                        //         page_idxes.push(idx);
+                                                        //     }
+
+                                                        //     index_statement
+                                                        //         .print_row_id(page, i as u16);
+                                                        // }
+                                                        // PageType::InteriorTable => {
+                                                        //     index_statement
+                                                        //         .print_row_id(page, i as u16);
+                                                        // }
+                                                        PageType::PageError => {
+                                                            bail!("Page Type Error");
+                                                        }
+                                                        _ => {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    break;
+                                }
+                                _ => {}
+                            },
                             _ => {}
                         }
 
@@ -203,7 +278,7 @@ fn main() -> Result<()> {
                                                             }
                                                         } else {
                                                             for i in 0..cell_len {
-                                                                if let Ok(Some((_, record))) =
+                                                                if let Ok((_, Some(record))) =
                                                                     page.read_cell(i as u16)
                                                                 {
                                                                     let mut values = Vec::new();

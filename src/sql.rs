@@ -10,9 +10,11 @@ use crate::{column::SerialValue, page::Page};
 
 #[derive(Debug)]
 pub struct Sql {
+    pub index_name: Option<Vec<String>>,
     pub field_name: Vec<String>,
     pub selection: HashMap<String, String>,
     pub tbl_name: String,
+    pub index_column: Option<Vec<String>>,
 }
 
 impl Sql {
@@ -21,9 +23,11 @@ impl Sql {
         let query = Parser::parse_sql(&dialect, query).expect("parse select statement");
         // let target_table = query.split(" ").last().expect("specify table name");
 
+        let mut index_name = None;
         let mut field_name = Vec::new();
         let mut tbl_name = String::new();
         let mut selection = HashMap::new();
+        let mut index_column = None;
 
         while field_name.is_empty() && tbl_name.is_empty() {
             match &query[0] {
@@ -85,14 +89,37 @@ impl Sql {
                         .collect();
                     tbl_name = name.0[0].value.to_string();
                 }
+                Statement::CreateIndex {
+                    name,
+                    table_name,
+                    columns,
+                    ..
+                } => {
+                    if let Some(indexes) = name {
+                        let names: Vec<String> =
+                            indexes.0.iter().map(|index| index.value.clone()).collect();
+                        index_name = Some(names);
+                    }
+                    tbl_name = table_name.0[0].value.to_string();
+
+                    let mut idx_columns = Vec::new();
+                    for column in columns.iter() {
+                        if let Expr::Identifier(ident) = &column.expr {
+                            idx_columns.push(ident.value.clone());
+                        }
+                    }
+                    index_column = Some(idx_columns);
+                }
                 _ => todo!(),
             }
         }
 
         Self {
+            index_name,
             field_name,
             selection,
             tbl_name,
+            index_column,
         }
     }
 
@@ -125,7 +152,7 @@ impl Sql {
         row_set: &mut HashSet<String>,
         _rowid_set: &mut HashSet<i64>,
     ) {
-        if let Ok(Some((rowid, record))) = page.read_cell(i) {
+        if let Ok((Some(rowid), Some(record))) = page.read_cell(i) {
             let mut values = Vec::new();
             for (_key, value) in self.selection.iter() {
                 for (column_i, column) in record.columns.iter().enumerate() {
@@ -166,6 +193,24 @@ impl Sql {
                 row_set.insert(values.join("|"));
                 // }
             }
+        }
+    }
+
+    pub fn print_row_id(&self, page: &Page, i: u16) {
+        match page.read_cell(i) {
+            Ok((Some(rowid), Some(record))) => {
+                eprintln!("{rowid}");
+            }
+            Ok((Some(rowid), None)) => {
+                eprintln!("{rowid}");
+            }
+            Ok((None, Some(record))) => {
+                // eprintln!("{record:?}");
+            }
+            Ok((None, None)) => {
+                // eprintln!("");
+            }
+            Err(e) => eprintln!("error: {e}"),
         }
     }
 }
