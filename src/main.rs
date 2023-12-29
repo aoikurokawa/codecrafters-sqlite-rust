@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use anyhow::{bail, Result};
 use sqlite_starter_rust::{column::SerialValue, database::Database, page::PageType, sql::Sql};
 
@@ -205,7 +207,7 @@ fn main() -> Result<()> {
 
                                                 let mut page_idxes: Vec<usize> =
                                                     vec![*num as usize - 1];
-                                                let mut read_page_idxes: Vec<usize> = vec![];
+                                                let mut set = HashSet::new();
 
                                                 while let Some(page_idx) = page_idxes.pop() {
                                                     if let Some(page) = db.pages.get(page_idx) {
@@ -216,11 +218,10 @@ fn main() -> Result<()> {
                                                                 match page.page_type() {
                                                                     PageType::LeafTable
                                                                     | PageType::LeafIndex => {
-                                                                        read_page_idxes.push(page_idx);
                                                                         select_statement
                                                                             .print_rows(
                                                                                 page, i as u16,
-                                                                                &fields,
+                                                                                &fields, &mut set,
                                                                             );
                                                                     }
                                                                     PageType::InteriorTable
@@ -228,12 +229,7 @@ fn main() -> Result<()> {
                                                                         if let Ok(idx) = page
                                                                             .read_page_idx(i as u16)
                                                                         {
-                                                                            if !read_page_idxes
-                                                                                .contains(&idx)
-                                                                            {
-                                                                                page_idxes
-                                                                                    .push(idx);
-                                                                            }
+                                                                            page_idxes.push(idx);
                                                                         }
                                                                     }
                                                                     PageType::PageError => {
@@ -267,6 +263,7 @@ fn main() -> Result<()> {
                                                         }
                                                     }
                                                 }
+                                                set.iter().for_each(|str| println!("{str}"));
                                             }
                                             _ => {}
                                         }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use sqlparser::{
     ast::{Expr, SelectItem, SetExpr, Statement, TableFactor, Value},
@@ -100,7 +100,7 @@ impl Sql {
     }
 
     // [(0, "id"), (1, "name")]
-    pub fn print_rows(&self, page: &Page, i: u16, fields: &Vec<(usize, String)>) {
+    pub fn print_rows(&self, page: &Page, i: u16, fields: &Vec<(usize, String)>, set: &mut HashSet<String>) {
         // eprintln!("Fields: {fields:?}");
         if let Ok(Some((rowid, record))) = page.read_cell(i) {
             let mut values = Vec::new();
@@ -132,7 +132,8 @@ impl Sql {
             }
 
             if !values.is_empty() {
-                println!("{}", values.join("|"));
+                set.insert(values.join("|"));
+                // println!("{}", values.join("|"));
             }
         }
     }
