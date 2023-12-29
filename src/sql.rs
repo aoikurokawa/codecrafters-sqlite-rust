@@ -130,7 +130,7 @@ impl Sql {
                             let con_row = if fields[0].0 == 0 {
                                 format!("{rowid}{}", rows.join("|"))
                             } else {
-                                "".to_string()
+                                rows.join("|")
                             };
 
                             if !values.contains(&con_row) {
