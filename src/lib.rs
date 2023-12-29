@@ -6,12 +6,12 @@ pub mod record;
 pub mod sql;
 
 pub fn decode_varint(bytes: &[u8]) -> anyhow::Result<(i64, usize)> {
-    if bytes.is_empty() || bytes.len() > 9 {
-        return Err(anyhow::Error::msg(format!(
-            "invalid varint: {:?}",
-            &bytes[0..9]
-        )));
-    }
+    // if bytes.is_empty() || bytes.len() > 9 {
+    //     return Err(anyhow::Error::msg(format!(
+    //         "invalid varint: {:?}",
+    //         &bytes[0..9]
+    //     )));
+    // }
 
     let mut result = 0;
     let mut bytes_read = 0;

@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, Context};
 
 use crate::{database::DbHeader, decode_varint, record::Record};
 
@@ -79,6 +79,19 @@ impl Page {
 
                 Ok(Some(record))
             }
+            PageType::LeafIndex => {
+                let mut idx = offset;
+
+                let (npayload, bytes_read) =
+                    decode_varint(&self.buffer[idx..]).context("decode varint for payload size")?;
+                idx += bytes_read;
+
+                let end = idx + npayload as usize;
+                let payload = &self.buffer[idx..end];
+                let record = Record::new(payload).context("create new record")?;
+
+                Ok(Some(record))
+            }
             PageType::InteriorTable => {
                 // let idx = offset;
 
@@ -106,7 +119,30 @@ impl Page {
 
                 Ok(None)
             }
-            _ => todo!(),
+            PageType::InteriorIndex => {
+                let mut idx = offset;
+
+                let _left_child_pointer = u32::from_be_bytes([
+                    self.buffer[idx],
+                    self.buffer[idx + 1],
+                    self.buffer[idx + 2],
+                    self.buffer[idx + 3],
+                ]);
+                idx += 4;
+
+                let (npayload, bytes_read) =
+                    decode_varint(&self.buffer[idx..]).context("decode varint for payload size")?;
+                idx += bytes_read;
+
+                let end = idx + npayload as usize;
+                let payload = &self.buffer[idx..end];
+                let record = Record::new(payload).context("create new record")?;
+
+                Ok(Some(record))
+            }
+            PageType::PageError => {
+                bail!("can not read cell");
+            }
         }
     }
 
@@ -118,7 +154,7 @@ impl Page {
         let offset = self.cell_offsets[i as usize] as usize;
 
         match self.btree_header.page_type {
-            PageType::InteriorTable => {
+            PageType::InteriorTable | PageType::InteriorIndex => {
                 let idx = offset;
 
                 let left_child_pointer = u32::from_be_bytes([

@@ -6,7 +6,7 @@ use sqlparser::{
     parser::Parser,
 };
 
-use crate::{page::Page, column::SerialValue};
+use crate::{column::SerialValue, page::Page};
 
 pub struct Sql {
     pub field_name: Vec<String>,
@@ -77,11 +77,7 @@ impl Sql {
                     }
                     _ => todo!(),
                 },
-                Statement::CreateTable {
-                    name,
-                    columns,
-                    ..
-                } => {
+                Statement::CreateTable { name, columns, .. } => {
                     field_name = columns
                         .iter()
                         .map(|column_def| column_def.name.value.clone())
@@ -117,7 +113,10 @@ impl Sql {
                     }
                 }
             }
-            println!("{}", values.join("|"));
+
+            if !values.is_empty() {
+                println!("{}", values.join("|"));
+            }
         }
     }
 }

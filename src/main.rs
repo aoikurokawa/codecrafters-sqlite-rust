@@ -19,7 +19,9 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             println!("database page size: {}", db.page_size());
 
-            println!("number of tables: {}", db.tables());
+            if let Some(first_page) = db.pages.get(0) {
+                println!("number of tables: {}", first_page.btree_header.ncells());
+            }
         }
         ".tables" => {
             let file_path = &args[1];
@@ -28,7 +30,7 @@ fn main() -> Result<()> {
             match db.pages.get(0) {
                 Some(first_page) => {
                     let mut tables = String::new();
-                    for i in 0..db.tables() {
+                    for i in 0..first_page.btree_header.ncells() {
                         if let Ok(Some(record)) = first_page.read_cell(i) {
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
@@ -63,7 +65,7 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             match db.pages.get(0) {
                 Some(first_page) => {
-                    for i in 0..db.tables() {
+                    for i in 0..first_page.btree_header.ncells() {
                         if let Ok(Some(record)) = first_page.read_cell(i) {
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
@@ -108,7 +110,7 @@ fn main() -> Result<()> {
 
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
-                for i in 0..db.tables() {
+                for i in 0..first_page.btree_header.ncells() {
                     if let Ok(Some(record)) = first_page.read_cell(i) {
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
@@ -153,7 +155,7 @@ fn main() -> Result<()> {
 
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
-                for i in 0..db.tables() {
+                for i in 0..first_page.btree_header.ncells() {
                     if let Ok(Some(record)) = first_page.read_cell(i) {
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
@@ -206,12 +208,11 @@ fn main() -> Result<()> {
                                                     if let Some(page) = db.pages.get(page_idx) {
                                                         let cell_len = page.cell_offsets.len();
 
-                                                        eprintln!("Cell length: {cell_len}");
-
                                                         if !select_statement.selection.is_empty() {
                                                             for i in 0..cell_len {
                                                                 match page.page_type() {
-                                                                    PageType::LeafTable => {
+                                                                    PageType::LeafTable
+                                                                    | PageType::LeafIndex => {
                                                                         select_statement
                                                                             .print_rows(
                                                                                 page, i as u16,
@@ -225,7 +226,22 @@ fn main() -> Result<()> {
                                                                             page_idxes.push(idx);
                                                                         }
                                                                     }
-                                                                    _ => {}
+                                                                    PageType::InteriorIndex => {
+                                                                        if let Ok(idx) = page
+                                                                            .read_page_idx(i as u16)
+                                                                        {
+                                                                            page_idxes.push(idx);
+                                                                        }
+
+                                                                        select_statement
+                                                                            .print_rows(
+                                                                                page, i as u16,
+                                                                                &fields,
+                                                                            );
+                                                                    }
+                                                                    PageType::PageError => {
+                                                                        bail!("Page Type Error");
+                                                                    }
                                                                 }
                                                             }
                                                         } else {

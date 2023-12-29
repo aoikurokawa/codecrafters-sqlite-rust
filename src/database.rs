@@ -30,10 +30,6 @@ impl Database {
     pub fn page_size(&self) -> usize {
         self.header.page_size
     }
-
-    pub fn tables(&self) -> u16 {
-        self.pages[0].btree_header.ncells
-    }
 }
 
 #[derive(Debug, Clone)]

@@ -12,15 +12,14 @@ pub struct Record {
 
 impl Record {
     pub fn new(data: &[u8]) -> anyhow::Result<Self> {
-        let (header_length, hl_size) = decode_varint(&data[0..9]).context("read record header")?;
+        let (header_length, hl_size) = decode_varint(&data[0..]).context("read record header")?;
         let header_length = header_length as usize;
         let mut header_index = hl_size;
         let mut data_index = header_length;
 
         let mut columns = Vec::new();
         while header_index < header_length {
-            let (int, len) =
-                decode_varint(&data[header_index..header_index + 8]).context("read serial type")?;
+            let (int, len) = decode_varint(&data[header_index..]).context("read serial type")?;
             header_index += len;
 
             let serial_type = SerialType::read(int)?;
