@@ -180,7 +180,6 @@ fn main() -> Result<()> {
                                                 let create_statement = Sql::from_str(
                                                     &record.columns[4].data().display(),
                                                 );
-                                                eprintln!("{:?}", create_statement);
 
                                                 let fields: Vec<(usize, String)> = select_statement
                                                     .field_name
