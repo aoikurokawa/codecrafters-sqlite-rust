@@ -96,6 +96,27 @@ impl Sql {
         }
     }
 
+    pub fn get_fields(&self, create_statement: &Sql) -> Vec<(usize, String)> {
+        self.field_name
+            .clone()
+            .into_iter()
+            .enumerate()
+            .map(|(_i, select_field)| {
+                let index = if let Some(index) = create_statement
+                    .field_name
+                    .iter()
+                    .position(|x| x.as_str() == select_field.as_str())
+                {
+                    index
+                } else {
+                    0
+                };
+
+                (index, select_field)
+            })
+            .collect()
+    }
+
     pub fn print_rows(
         &self,
         page: &Page,

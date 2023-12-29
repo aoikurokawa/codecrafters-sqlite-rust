@@ -95,30 +95,6 @@ impl Page {
                 Ok(Some((0, record)))
             }
             PageType::InteriorTable => {
-                // let idx = offset;
-
-                // let left_child_pointer = u32::from_be_bytes([
-                //     self.buffer[idx],
-                //     self.buffer[idx + 1],
-                //     self.buffer[idx + 2],
-                //     self.buffer[idx + 3],
-                // ]);
-                // idx += 4;
-                // eprintln!("{left_child_pointer}");
-
-                // let (_rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
-                //     .context("decode varint for payload size")?;
-                // idx += bytes_read;
-
-                // let end = if npayload as usize > self.buffer.len() {
-                //     self.buffer.len()
-                // } else {
-                //     idx + npayload as usize
-                // };
-                // let end = idx + npayload as usize;
-                // let payload = &self.buffer[idx..end];
-                // let record = Record::new(payload).context("create new record")?;
-
                 Ok(None)
             }
             PageType::InteriorIndex => {

@@ -61,51 +61,6 @@ fn main() -> Result<()> {
                 None => eprintln!("can not read first page"),
             }
         }
-        ".index" => {
-            let file_path = &args[1];
-
-            let db = Database::read_file(file_path)?;
-            match db.pages.get(0) {
-                Some(first_page) => {
-                    for i in 0..first_page.btree_header.ncells() {
-                        if let Ok(Some((_, record))) = first_page.read_cell(i) {
-                            match record.columns[0].data() {
-                                SerialValue::String(ref str) => {
-                                    if str != "table" {
-                                        continue;
-                                    }
-                                }
-                                _ => {}
-                            }
-
-                            for i in 0..4 {
-                                eprintln!("Column {i}: {:?}", record.columns[i]);
-                            }
-
-                            match record.columns[2].data() {
-                                SerialValue::String(ref str) => {
-                                    if str == "sqlite_sequence" {
-                                        match record.columns[3].data() {
-                                            SerialValue::I8(num) => {
-                                                // eprintln!("num: {num}");
-                                                if let Some(page) = db.pages.get(*num as usize - 1)
-                                                {
-                                                    let cell_len = page.cell_offsets.len();
-                                                    println!("{:?}", cell_len);
-                                                }
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            };
-                        };
-                    }
-                }
-                None => eprintln!("can not read first page"),
-            }
-        }
         query if query.to_lowercase().starts_with("select count(*)") => {
             let file_path = &args[1];
             let select_statement = Sql::from_str(query);
@@ -181,28 +136,8 @@ fn main() -> Result<()> {
                                                     &record.columns[4].data().display(),
                                                 );
 
-                                                let fields: Vec<(usize, String)> = select_statement
-                                                    .field_name
-                                                    .clone()
-                                                    .into_iter()
-                                                    .enumerate()
-                                                    .map(|(_i, select_field)| {
-                                                        let index = if let Some(index) =
-                                                            create_statement
-                                                                .field_name
-                                                                .iter()
-                                                                .position(|x| {
-                                                                    x.as_str()
-                                                                        == select_field.as_str()
-                                                                }) {
-                                                            index
-                                                        } else {
-                                                            0
-                                                        };
-
-                                                        (index, select_field)
-                                                    })
-                                                    .collect();
+                                                let fields =
+                                                    select_statement.get_fields(&create_statement);
 
                                                 let mut page_idxes: Vec<usize> =
                                                     vec![*num as usize - 1];
@@ -228,23 +163,39 @@ fn main() -> Result<()> {
                                                                     }
 
                                                                     PageType::LeafIndex => {
-                                                                        // select_statement
-                                                                        //     .print_rows(
-                                                                        //         page,
-                                                                        //         i as u16,
-                                                                        //         &fields,
-                                                                        //         &mut row_set,
-                                                                        //         &mut rowid_set,
-                                                                        //     );
+                                                                        select_statement
+                                                                            .print_rows(
+                                                                                page,
+                                                                                i as u16,
+                                                                                &fields,
+                                                                                &mut row_set,
+                                                                                &mut rowid_set,
+                                                                            );
                                                                     }
-                                                                    PageType::InteriorTable
-                                                                    | PageType::InteriorIndex => {
+                                                                    PageType::InteriorTable => {
                                                                         if let Ok(idx) = page
                                                                             .read_page_idx(i as u16)
                                                                         {
                                                                             page_idxes.push(idx);
                                                                         }
                                                                     }
+                                                                    PageType::InteriorIndex => {
+                                                                        if let Ok(idx) = page
+                                                                            .read_page_idx(i as u16)
+                                                                        {
+                                                                            page_idxes.push(idx);
+                                                                        }
+
+                                                                        select_statement
+                                                                            .print_rows(
+                                                                                page,
+                                                                                i as u16,
+                                                                                &fields,
+                                                                                &mut row_set,
+                                                                                &mut rowid_set,
+                                                                            );
+                                                                    }
+
                                                                     PageType::PageError => {
                                                                         bail!("Page Type Error");
                                                                     }
