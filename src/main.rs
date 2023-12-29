@@ -31,7 +31,7 @@ fn main() -> Result<()> {
                 Some(first_page) => {
                     let mut tables = String::new();
                     for i in 0..first_page.btree_header.ncells() {
-                        if let Ok(Some(record)) = first_page.read_cell(i) {
+                        if let Ok(Some((_, record))) = first_page.read_cell(i) {
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
                                     if str != "table" {
@@ -66,7 +66,7 @@ fn main() -> Result<()> {
             match db.pages.get(0) {
                 Some(first_page) => {
                     for i in 0..first_page.btree_header.ncells() {
-                        if let Ok(Some(record)) = first_page.read_cell(i) {
+                        if let Ok(Some((_, record))) = first_page.read_cell(i) {
                             match record.columns[0].data() {
                                 SerialValue::String(ref str) => {
                                     if str != "table" {
@@ -111,7 +111,7 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..first_page.btree_header.ncells() {
-                    if let Ok(Some(record)) = first_page.read_cell(i) {
+                    if let Ok(Some((_, record))) = first_page.read_cell(i) {
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
                                 if str != "table" {
@@ -156,7 +156,7 @@ fn main() -> Result<()> {
             let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..first_page.btree_header.ncells() {
-                    if let Ok(Some(record)) = first_page.read_cell(i) {
+                    if let Ok(Some((_, record))) = first_page.read_cell(i) {
                         match record.columns[0].data() {
                             SerialValue::String(ref str) => {
                                 if str != "table" {
@@ -178,6 +178,7 @@ fn main() -> Result<()> {
                                                 let create_statement = Sql::from_str(
                                                     &record.columns[4].data().display(),
                                                 );
+                                                eprintln!("{:?}", create_statement);
 
                                                 let fields: Vec<(usize, String)> = select_statement
                                                     .field_name
@@ -201,8 +202,10 @@ fn main() -> Result<()> {
                                                         (index, select_field)
                                                     })
                                                     .collect();
+
                                                 let mut page_idxes: Vec<usize> =
                                                     vec![*num as usize - 1];
+                                                let mut read_page_idxes: Vec<usize> = vec![];
 
                                                 while let Some(page_idx) = page_idxes.pop() {
                                                     if let Some(page) = db.pages.get(page_idx) {
@@ -213,31 +216,25 @@ fn main() -> Result<()> {
                                                                 match page.page_type() {
                                                                     PageType::LeafTable
                                                                     | PageType::LeafIndex => {
+                                                                        read_page_idxes.push(page_idx);
                                                                         select_statement
                                                                             .print_rows(
                                                                                 page, i as u16,
                                                                                 &fields,
                                                                             );
                                                                     }
-                                                                    PageType::InteriorTable => {
+                                                                    PageType::InteriorTable
+                                                                    | PageType::InteriorIndex => {
                                                                         if let Ok(idx) = page
                                                                             .read_page_idx(i as u16)
                                                                         {
-                                                                            page_idxes.push(idx);
+                                                                            if !read_page_idxes
+                                                                                .contains(&idx)
+                                                                            {
+                                                                                page_idxes
+                                                                                    .push(idx);
+                                                                            }
                                                                         }
-                                                                    }
-                                                                    PageType::InteriorIndex => {
-                                                                        if let Ok(idx) = page
-                                                                            .read_page_idx(i as u16)
-                                                                        {
-                                                                            page_idxes.push(idx);
-                                                                        }
-
-                                                                        select_statement
-                                                                            .print_rows(
-                                                                                page, i as u16,
-                                                                                &fields,
-                                                                            );
                                                                     }
                                                                     PageType::PageError => {
                                                                         bail!("Page Type Error");
@@ -246,7 +243,7 @@ fn main() -> Result<()> {
                                                             }
                                                         } else {
                                                             for i in 0..cell_len {
-                                                                if let Ok(Some(record)) =
+                                                                if let Ok(Some((_, record))) =
                                                                     page.read_cell(i as u16)
                                                                 {
                                                                     let mut values = Vec::new();

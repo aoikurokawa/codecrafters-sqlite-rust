@@ -6,8 +6,12 @@ use sqlparser::{
     parser::Parser,
 };
 
-use crate::{column::SerialValue, page::Page};
+use crate::{
+    column::{SerialType, SerialValue},
+    page::Page,
+};
 
+#[derive(Debug)]
 pub struct Sql {
     pub field_name: Vec<String>,
     pub selection: HashMap<String, String>,
@@ -94,20 +98,33 @@ impl Sql {
             tbl_name,
         }
     }
+
+    // [(0, "id"), (1, "name")]
     pub fn print_rows(&self, page: &Page, i: u16, fields: &Vec<(usize, String)>) {
-        if let Ok(Some(record)) = page.read_cell(i) {
+        // eprintln!("Fields: {fields:?}");
+        if let Ok(Some((rowid, record))) = page.read_cell(i) {
             let mut values = Vec::new();
+            // value = Pink Eyes
             for (_key, value) in self.selection.iter() {
-                for (field_idx, _field_name) in fields {
-                    if let SerialValue::String(candidate_value) = record.columns[*field_idx].data()
-                    {
+                // Column 0: Column { key: Null, data: Null }
+                // Column 1: Column { key: String(20), data: String("Thanatos (New Earth)") }
+                // Column 2: Column { key: String(9), data: String("Blue Eyes") }
+                // Column 3: Column { key: String(10), data: String("Blond Hair") }
+                // Column 4: Column { key: I8, data: I8(7) }
+                // Column 5: Column { key: String(14), data: String("1970, December") }
+                // Column 6: Column { key: String(4), data: String("1970") }
+                for (_column_i, column) in record.columns.iter().enumerate() {
+                    if let SerialValue::String(candidate_value) = column.data() {
                         if candidate_value == value {
                             let rows: Vec<String> = fields
                                 .iter()
                                 .map(|(i, _field)| record.columns[*i].data().display())
                                 .collect();
-                            values.push(rows.join("|"));
+                            let con_row = format!("{rowid}{}", rows.join("|"));
 
+                            if !values.contains(&con_row) {
+                                values.push(con_row)
+                            }
                             break;
                         }
                     }

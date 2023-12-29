@@ -4,7 +4,8 @@ use crate::{database::DbHeader, decode_varint, record::Record};
 
 #[derive(Debug, Clone)]
 pub struct Page {
-    pub(crate) db_header: Option<DbHeader>,
+    pub index: usize,
+    pub db_header: Option<DbHeader>,
     pub btree_header: BTreePageHeader,
     pub(crate) buffer: Vec<u8>,
     pub cell_offsets: Vec<u16>,
@@ -38,6 +39,7 @@ impl Page {
         }
 
         Self {
+            index: idx,
             db_header,
             btree_header,
             buffer: b_tree_page.to_vec(),
@@ -49,7 +51,7 @@ impl Page {
         &self.btree_header.page_type
     }
 
-    pub fn read_cell(&self, i: u16) -> anyhow::Result<Option<Record>> {
+    pub fn read_cell(&self, i: u16) -> anyhow::Result<Option<(i64, Record)>> {
         if i >= self.btree_header.ncells {
             bail!("Cell index out of range");
         }
@@ -64,7 +66,7 @@ impl Page {
                     .context("decode varint for payload size")?;
                 idx += bytes_read;
 
-                let (_rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
+                let (rowid, bytes_read) = decode_varint(&self.buffer[idx..idx + 9])
                     .context("decode varint for payload size")?;
                 idx += bytes_read;
 
@@ -77,7 +79,7 @@ impl Page {
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;
 
-                Ok(Some(record))
+                Ok(Some((rowid, record)))
             }
             PageType::LeafIndex => {
                 let mut idx = offset;
@@ -90,7 +92,7 @@ impl Page {
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;
 
-                Ok(Some(record))
+                Ok(Some((0, record)))
             }
             PageType::InteriorTable => {
                 // let idx = offset;
@@ -138,7 +140,7 @@ impl Page {
                 let payload = &self.buffer[idx..end];
                 let record = Record::new(payload).context("create new record")?;
 
-                Ok(Some(record))
+                Ok(Some((0, record)))
             }
             PageType::PageError => {
                 bail!("can not read cell");

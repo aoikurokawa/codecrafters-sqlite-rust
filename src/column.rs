@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SerialType {
     /// Value is a NULL
     Null,
@@ -100,6 +100,7 @@ pub enum SerialValue {
 impl SerialValue {
     pub fn display(&self) -> String {
         match self {
+            SerialValue::Null => "".to_string(),
             SerialValue::String(txt) => txt.to_string(),
             _ => todo!(),
         }
