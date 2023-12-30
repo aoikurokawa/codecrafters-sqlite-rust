@@ -245,7 +245,7 @@ fn main() -> Result<()> {
                                                                             select_statement
                                                                                 .print_rows(
                                                                                     page,
-                                                                                    i as u16,
+                                                                                    i,
                                                                                     &fields,
                                                                                     &mut row_set,
                                                                                     &mut rowid_set,

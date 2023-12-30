@@ -146,56 +146,54 @@ impl Sql {
     pub fn print_rows(
         &self,
         page: &Page,
-        i: u16,
+        i: usize,
         fields: &Vec<(usize, String)>,
         row_set: &mut HashSet<String>,
         _rowid_set: &mut HashSet<i64>,
     ) {
-        match page.read_cell(i) {
-            Ok((Some(rowid), Some(record))) => {
-                let mut values = Vec::new();
+        if let Some(cell) = page.cells.get(i) {
+            let mut values = Vec::new();
+            let record = cell.record.clone().unwrap();
 
-                for (_key, value) in self.selection.iter() {
-                    for (column_i, column) in record.columns.iter().enumerate() {
-                        if column_i == 0 && *column.data() != SerialValue::Null {
-                            break;
-                        }
+            for (_key, value) in self.selection.iter() {
+                for (column_i, column) in record.columns.iter().enumerate() {
+                    if column_i == 0 && *column.data() != SerialValue::Null {
+                        break;
+                    }
 
-                        if let SerialValue::String(candidate_value) = column.data() {
-                            if candidate_value == value {
-                                let rows: Vec<String> = fields
-                                    .iter()
-                                    .map(|(i, _field)| {
-                                        if *i == 0 {
-                                            String::new()
-                                        } else {
-                                            record.columns[*i].data().display()
-                                        }
-                                    })
-                                    .collect();
+                    if let SerialValue::String(candidate_value) = column.data() {
+                        if candidate_value == value {
+                            let rows: Vec<String> = fields
+                                .iter()
+                                .map(|(i, _field)| {
+                                    if *i == 0 {
+                                        String::new()
+                                    } else {
+                                        record.columns[*i].data().display()
+                                    }
+                                })
+                                .collect();
 
-                                let con_row = if fields[0].0 == 0 {
-                                    format!("{rowid}{}", rows.join("|"))
-                                } else {
-                                    rows.join("|")
-                                };
+                            let con_row = if fields[0].0 == 0 {
+                                format!("{}{}", cell.rowid.unwrap(), rows.join("|"))
+                            } else {
+                                rows.join("|")
+                            };
 
-                                if !values.contains(&con_row) {
-                                    values.push(con_row)
-                                }
-                                break;
+                            if !values.contains(&con_row) {
+                                values.push(con_row)
                             }
+                            break;
                         }
                     }
                 }
-
-                if !values.is_empty() {
-                    // if rowid_set.insert(rowid) {
-                    row_set.insert(values.join("|"));
-                    // }
-                }
             }
-            _ => {}
+
+            if !values.is_empty() {
+                // if rowid_set.insert(rowid) {
+                row_set.insert(values.join("|"));
+                // }
+            }
         }
     }
 
