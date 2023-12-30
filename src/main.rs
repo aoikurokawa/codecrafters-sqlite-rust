@@ -154,41 +154,12 @@ fn main() -> Result<()> {
                                         let index_statement =
                                             Sql::from_str(&record.columns[4].data().display());
                                         if let SerialValue::I8(num) = record.columns[3].data() {
-                                            let mut page_idxes: Vec<usize> =
-                                                vec![*num as usize - 1];
-
-                                            while let Some(page_idx) = page_idxes.pop() {
-                                                if let Some(page) = db.pages.get(page_idx) {
-                                                    let cell_len = page.cell_offsets.len();
-
-                                                    for i in 0..cell_len {
-                                                        if let Some(page_num_left_child) =
-                                                            page.cells[i].page_number_left_child
-                                                        {
-                                                            page_idxes.push(
-                                                                page_num_left_child as usize - 1,
-                                                            );
-                                                        }
-
-                                                        if let Some(page_num_first_overflow) =
-                                                            page.cells[i].page_number_first_overflow
-                                                        {
-                                                            page_idxes.push(
-                                                                page_num_first_overflow as usize,
-                                                            );
-                                                        }
-
-                                                        if let Some(_row_id) = &page.cells[i].record
-                                                        {
-                                                            index_statement.print_row_id(
-                                                                page.cells[i].record.clone(),
-                                                                &select_statement,
-                                                                &mut rowids,
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                            db.read_index(
+                                                *num as usize,
+                                                &index_statement,
+                                                &select_statement,
+                                                &mut rowids,
+                                            );
                                         }
                                     }
                                     _ => {}

@@ -35,6 +35,41 @@ impl Database {
         self.header.page_size
     }
 
+    pub fn read_index(
+        &self,
+        num: usize,
+        index_statement: &Sql,
+        select_statement: &Sql,
+        rowids: &mut HashSet<i64>,
+    ) {
+        let mut page_idxes: Vec<usize> = vec![num - 1];
+
+        while let Some(page_idx) = page_idxes.pop() {
+            if let Some(page) = self.pages.get(page_idx) {
+                let cell_len = page.cell_offsets.len();
+
+                for i in 0..cell_len {
+                    if let Some(page_num_left_child) = page.cells[i].page_number_left_child {
+                        page_idxes.push(page_num_left_child as usize - 1);
+                    }
+
+                    // if let Some(page_num_first_overflow) = page.cells[i].page_number_first_overflow
+                    // {
+                    //     page_idxes.push(page_num_first_overflow as usize);
+                    // }
+
+                    if let Some(_row_id) = &page.cells[i].record {
+                        index_statement.print_row_id(
+                            page.cells[i].record.clone(),
+                            &select_statement,
+                            rowids,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     pub fn read_table(
         &self,
         num: usize,
