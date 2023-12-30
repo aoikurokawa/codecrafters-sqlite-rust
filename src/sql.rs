@@ -198,27 +198,21 @@ impl Sql {
         &self,
         record: Option<Record>,
         select_statement: &Sql,
-        rowids: &mut Vec<i64>,
+        rowids: &mut HashSet<i64>,
     ) {
         if let Some(record) = record {
             for (_key, value) in select_statement.selection.iter() {
                 if let SerialValue::String(country) = record.columns[0].data() {
                     if value == country {
-                        match record.columns[1].data() {
-                            SerialValue::I8(num) => {
-                                rowids.push(*num as i64);
-                            }
-                            SerialValue::I16(num) => {
-                                rowids.push(*num as i64);
-                            }
-                            SerialValue::I24(num) => {
-                                rowids.push(*num as i64);
-                            }
-                            SerialValue::I32(num) => {
-                                rowids.push(*num as i64);
-                            }
+                        let num = match record.columns[1].data() {
+                            SerialValue::I8(num) => *num as i64,
+                            SerialValue::I16(num) => *num as i64,
+                            SerialValue::I24(num) => *num as i64,
+                            SerialValue::I32(num) => *num as i64,
                             _ => todo!(),
-                        }
+                        };
+
+                        rowids.insert(num);
                     }
                 }
             }

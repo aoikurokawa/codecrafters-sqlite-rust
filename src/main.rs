@@ -1,9 +1,7 @@
 use std::collections::HashSet;
 
 use anyhow::{bail, Result};
-use sqlite_starter_rust::{
-    cell::Cell, column::SerialValue, database::Database, page::PageType, sql::Sql,
-};
+use sqlite_starter_rust::{column::SerialValue, database::Database, sql::Sql};
 
 fn main() -> Result<()> {
     // Parse arguments
@@ -148,7 +146,7 @@ fn main() -> Result<()> {
                 for i in 0..first_page.btree_header.ncells() {
                     match first_page.read_cell(i)? {
                         (_, Some(record)) => {
-                            let mut rowids = Vec::new();
+                            let mut rowids = HashSet::new();
 
                             match record.columns[0].data() {
                                 SerialValue::String(str) => match str.as_str() {
@@ -180,7 +178,8 @@ fn main() -> Result<()> {
                                                             );
                                                         }
 
-                                                        if let Some(_row_id) = page.cells[i].rowid {
+                                                        if let Some(_row_id) = &page.cells[i].record
+                                                        {
                                                             index_statement.print_row_id(
                                                                 page.cells[i].record.clone(),
                                                                 &select_statement,
@@ -196,6 +195,9 @@ fn main() -> Result<()> {
                                 },
                                 _ => {}
                             }
+
+                            let mut rowids: Vec<i64> = rowids.into_iter().collect();
+                            rowids.sort_unstable();
 
                             match record.columns[2].data() {
                                 SerialValue::String(str) => match str.as_str() {
@@ -213,94 +215,28 @@ fn main() -> Result<()> {
                                                     let fields = select_statement
                                                         .get_fields(&create_statement);
 
-                                                    let mut page_idxes: Vec<usize> =
-                                                        vec![*num as usize - 1];
                                                     let mut row_set = HashSet::new();
                                                     let mut rowid_set = HashSet::new();
 
-                                                    while let Some(page_idx) = page_idxes.pop() {
-                                                        if let Some(page) = db.pages.get(page_idx) {
-                                                            let cell_len = page.cell_offsets.len();
-
-                                                            if !select_statement
-                                                                .selection
-                                                                .is_empty()
-                                                            {
-                                                                for i in 0..cell_len {
-                                                                    if let Some(
-                                                                        page_num_left_child,
-                                                                    ) = page.cells[i]
-                                                                        .page_number_left_child
-                                                                    {
-                                                                        page_idxes.push(
-                                                                            page_num_left_child
-                                                                                as usize
-                                                                                - 1,
-                                                                        );
-                                                                    }
-
-                                                                    if let Some(
-                                                                        page_num_first_overflow,
-                                                                    ) = page.cells[i]
-                                                                        .page_number_first_overflow
-                                                                    {
-                                                                        page_idxes.push(
-                                                                            page_num_first_overflow
-                                                                                as usize
-                                                                                - 1,
-                                                                        );
-                                                                    }
-
-                                                                    if let Some(record) =
-                                                                        &page.cells[i].record
-                                                                    {
-                                                                        select_statement
-                                                                            .print_rows(
-                                                                                record,
-                                                                                &page.cells[i]
-                                                                                    .rowid,
-                                                                                &fields,
-                                                                                &mut row_set,
-                                                                                &mut rowid_set,
-                                                                            );
-                                                                    }
-                                                                }
-
-                                                                if let Some(num) = page
-                                                                    .btree_header
-                                                                    .right_most_pointer
-                                                                {
-                                                                    page_idxes
-                                                                        .push(num as usize - 1);
-                                                                }
-                                                            } else {
-                                                                for i in 0..cell_len {
-                                                                    if let Ok((_, Some(record))) =
-                                                                        page.read_cell(i as u16)
-                                                                    {
-                                                                        let mut values = Vec::new();
-
-                                                                        for (
-                                                                            field_idx,
-                                                                            _field_name,
-                                                                        ) in &fields
-                                                                        {
-                                                                            values.push(
-                                                                                record.columns
-                                                                                    [*field_idx]
-                                                                                    .data()
-                                                                                    .display(),
-                                                                            );
-                                                                        }
-                                                                        println!(
-                                                                            "{}",
-                                                                            values.join("|")
-                                                                        );
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
+                                                    if rowids.is_empty() {
+                                                        db.read_table(
+                                                            *num as usize,
+                                                            &select_statement,
+                                                            fields,
+                                                            &mut row_set,
+                                                            &mut rowid_set,
+                                                        );
+                                                    } else {
+                                                        db.read_ids_from_table(
+                                                            *num as usize,
+                                                            &select_statement,
+                                                            fields,
+                                                            &mut row_set,
+                                                            &mut rowid_set,
+                                                            &rowids,
+                                                        );
                                                     }
+
                                                     row_set
                                                         .iter()
                                                         .for_each(|str| println!("{str}"));

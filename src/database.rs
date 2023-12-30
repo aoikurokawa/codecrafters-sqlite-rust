@@ -1,6 +1,9 @@
-use std::{fs, path::Path};
+use std::{collections::HashSet, fs, path::Path};
 
-use crate::page::Page;
+use crate::{
+    page::{Page, PageType},
+    sql::Sql,
+};
 
 #[derive(Debug, Clone)]
 pub struct Database {
@@ -29,6 +32,132 @@ impl Database {
 
     pub fn page_size(&self) -> usize {
         self.header.page_size
+    }
+
+    pub fn read_table(
+        &self,
+        num: usize,
+        select_statement: &Sql,
+        fields: Vec<(usize, String)>,
+        row_set: &mut HashSet<String>,
+        rowid_set: &mut HashSet<i64>,
+    ) {
+        let mut page_idxes: Vec<usize> = vec![num - 1];
+        while let Some(page_idx) = page_idxes.pop() {
+            if let Some(page) = self.pages.get(page_idx) {
+                let cell_len = page.cell_offsets.len();
+
+                if !select_statement.selection.is_empty() {
+                    for i in 0..cell_len {
+                        if let Some(page_num_left_child) = page.cells[i].page_number_left_child {
+                            page_idxes.push(page_num_left_child as usize - 1);
+                        }
+
+                        if let Some(page_num_first_overflow) =
+                            page.cells[i].page_number_first_overflow
+                        {
+                            page_idxes.push(page_num_first_overflow as usize - 1);
+                        }
+
+                        if let Some(record) = &page.cells[i].record {
+                            select_statement.print_rows(
+                                record,
+                                &page.cells[i].rowid,
+                                &fields,
+                                row_set,
+                                rowid_set,
+                            );
+                        }
+                    }
+
+                    if let Some(num) = page.btree_header.right_most_pointer {
+                        page_idxes.push(num as usize - 1);
+                    }
+                } else {
+                    for i in 0..cell_len {
+                        if let Ok((_, Some(record))) = page.read_cell(i as u16) {
+                            let mut values = Vec::new();
+
+                            for (field_idx, _field_name) in &fields {
+                                values.push(record.columns[*field_idx].data().display());
+                            }
+                            println!("{}", values.join("|"));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn read_ids_from_table(
+        &self,
+        num: usize,
+        select_statement: &Sql,
+        fields: Vec<(usize, String)>,
+        row_set: &mut HashSet<String>,
+        rowid_set: &mut HashSet<i64>,
+        ids: &[i64],
+    ) {
+        let mut page_idxes: Vec<usize> = vec![num - 1];
+        while let Some(page_idx) = page_idxes.pop() {
+            if let Some(page) = self.pages.get(page_idx) {
+                let cell_len = page.cell_offsets.len();
+
+                if !select_statement.selection.is_empty() {
+                    let mut ids = ids;
+
+                    for i in 0..cell_len {
+                        if let PageType::InteriorTable = page.page_type() {
+                            let page_num_left_child = page.cells[i].page_number_left_child.unwrap();
+                            let key = page.cells[i].rowid.unwrap();
+
+                            let split_at = ids.split_at(ids.partition_point(|id| *id < key));
+                            let left_ids = split_at.0; // Ids to the left
+                            ids = split_at.1; // Ids to the right
+
+                            if !left_ids.is_empty() {
+                                page_idxes.push(page_num_left_child as usize - 1);
+                            }
+                        }
+
+                        if let Some(page_num_first_overflow) =
+                            page.cells[i].page_number_first_overflow
+                        {
+                            page_idxes.push(page_num_first_overflow as usize - 1);
+                        }
+
+                        if let Some(record) = &page.cells[i].record {
+                            select_statement.print_rows(
+                                record,
+                                &page.cells[i].rowid,
+                                &fields,
+                                row_set,
+                                rowid_set,
+                            );
+                        }
+                    }
+
+                    if ids.is_empty() {
+                        break;
+                    }
+
+                    if let Some(num) = page.btree_header.right_most_pointer {
+                        page_idxes.push(num as usize - 1);
+                    }
+                } else {
+                    for i in 0..cell_len {
+                        if let Ok((_, Some(record))) = page.read_cell(i as u16) {
+                            let mut values = Vec::new();
+
+                            for (field_idx, _field_name) in &fields {
+                                values.push(record.columns[*field_idx].data().display());
+                            }
+                            println!("{}", values.join("|"));
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
