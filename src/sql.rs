@@ -194,6 +194,53 @@ impl Sql {
         }
     }
 
+    pub fn print_rows_by_rowid(
+        &self,
+        record: &Record,
+        rowid: &Option<i64>,
+        fields: &Vec<(usize, String)>,
+        row_set: &mut HashSet<String>,
+        _rowid_set: &mut HashSet<i64>,
+    ) {
+        let mut values = Vec::new();
+
+        for (_key, value) in self.selection.iter() {
+            for (column_i, column) in record.columns.iter().enumerate() {
+                if column_i == 0 && *column.data() != SerialValue::Null {
+                    break;
+                }
+
+                let rows: Vec<String> = fields
+                    .iter()
+                    .map(|(i, _field)| {
+                        if *i == 0 {
+                            String::new()
+                        } else {
+                            record.columns[*i].data().display()
+                        }
+                    })
+                    .collect();
+
+                let con_row = if fields[0].0 == 0 {
+                    format!("{}{}", rowid.unwrap(), rows.join("|"))
+                } else {
+                    rows.join("|")
+                };
+
+                if !values.contains(&con_row) {
+                    values.push(con_row)
+                }
+                break;
+            }
+        }
+
+        if !values.is_empty() {
+            // if rowid_set.insert(rowid) {
+            row_set.insert(values.join("|"));
+            // }
+        }
+    }
+
     pub fn print_row_id(
         &self,
         record: Option<Record>,

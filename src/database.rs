@@ -89,12 +89,6 @@ impl Database {
                             page_idxes.push(page_num_left_child as usize - 1);
                         }
 
-                        // if let Some(page_num_first_overflow) =
-                        //     page.cells[i].page_number_first_overflow
-                        // {
-                        //     page_idxes.push(page_num_first_overflow as usize - 1);
-                        // }
-
                         if let Some(record) = &page.cells[i].record {
                             select_statement.print_rows(
                                 record,
@@ -177,7 +171,7 @@ impl Database {
                                 .collect();
 
                             for (rowid, record) in records {
-                                select_statement.print_rows(
+                                select_statement.print_rows_by_rowid(
                                     &record,
                                     &Some(rowid),
                                     &fields,
