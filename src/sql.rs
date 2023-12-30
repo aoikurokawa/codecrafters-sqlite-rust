@@ -172,8 +172,6 @@ impl Sql {
                             })
                             .collect();
 
-                        eprintln!("Rows: {rows:?}");
-
                         let con_row = if fields[0].0 == 0 {
                             format!("{}{}", rowid.unwrap(), rows.join("|"))
                         } else {
