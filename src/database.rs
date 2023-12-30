@@ -39,7 +39,7 @@ impl Database {
     pub fn read_index(
         &self,
         num: usize,
-        index_statement: &Sql,
+        _index_statement: &Sql,
         select_statement: &Sql,
         rowids: &mut HashSet<i64>,
     ) {
@@ -72,7 +72,9 @@ impl Database {
                                 }
                             }
 
-                            page_idxes.push(page_num_left_child as usize - 1);
+                            if let Some(num) = page.btree_header.right_most_pointer {
+                                page_idxes.push(num as usize - 1);
+                            }
                         }
                     }
 
