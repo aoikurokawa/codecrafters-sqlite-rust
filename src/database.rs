@@ -1,6 +1,7 @@
 use std::{collections::HashSet, fs, path::Path};
 
 use crate::{
+    column::SerialValue,
     page::{Page, PageType},
     record::Record,
     sql::Sql,
@@ -46,25 +47,57 @@ impl Database {
 
         while let Some(page_idx) = page_idxes.pop() {
             if let Some(page) = self.pages.get(page_idx) {
-                let cell_len = page.cell_offsets.len();
+                match page.page_type() {
+                    PageType::InteriorIndex => {
+                        for cell in page.cells.iter() {
+                            let page_num_left_child = cell.page_number_left_child.unwrap();
+                            let record = cell.record.clone().unwrap();
 
-                for i in 0..cell_len {
-                    if let Some(page_num_left_child) = page.cells[i].page_number_left_child {
-                        page_idxes.push(page_num_left_child as usize - 1);
+                            let SerialValue::String(country) = record.columns[0].data() else {
+                                page_idxes.push(page_num_left_child as usize - 1);
+                                continue;
+                            };
+
+                            for (_key, value) in select_statement.selection.iter() {
+                                if value == country {
+                                    let num = match record.columns[1].data() {
+                                        SerialValue::I8(num) => *num as i64,
+                                        SerialValue::I16(num) => *num as i64,
+                                        SerialValue::I24(num) => *num as i64,
+                                        SerialValue::I32(num) => *num as i64,
+                                        _ => todo!(),
+                                    };
+
+                                    rowids.insert(num);
+                                }
+                            }
+
+                            page_idxes.push(page_num_left_child as usize - 1);
+                        }
                     }
 
-                    // if let Some(page_num_first_overflow) = page.cells[i].page_number_first_overflow
-                    // {
-                    //     page_idxes.push(page_num_first_overflow as usize);
-                    // }
+                    PageType::LeafIndex => {
+                        for cell in page.cells.iter() {
+                            let record = cell.record.clone().unwrap();
 
-                    if let Some(_record) = &page.cells[i].record {
-                        index_statement.print_row_id(
-                            page.cells[i].record.clone(),
-                            &select_statement,
-                            rowids,
-                        );
+                            if let SerialValue::String(country) = record.columns[0].data() {
+                                for (_key, value) in select_statement.selection.iter() {
+                                    if value == country {
+                                        let num = match record.columns[1].data() {
+                                            SerialValue::I8(num) => *num as i64,
+                                            SerialValue::I16(num) => *num as i64,
+                                            SerialValue::I24(num) => *num as i64,
+                                            SerialValue::I32(num) => *num as i64,
+                                            _ => todo!(),
+                                        };
+
+                                        rowids.insert(num);
+                                    }
+                                }
+                            };
+                        }
                     }
+                    _ => {}
                 }
             }
         }
