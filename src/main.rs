@@ -253,8 +253,9 @@ fn main() -> Result<()> {
                                                                     {
                                                                         select_statement
                                                                             .print_rows(
-                                                                                page,
-                                                                                i,
+                                                                                record,
+                                                                                &page.cells[i]
+                                                                                    .rowid,
                                                                                 &fields,
                                                                                 &mut row_set,
                                                                                 &mut rowid_set,
