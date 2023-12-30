@@ -175,12 +175,22 @@ pub struct BTreePageHeader {
     pub ncells: u16,
     pub cells_start: u16,
     pub nfragemented_free: u8,
-    pub right_most_pointer: u32,
+    pub right_most_pointer: Option<u32>,
 }
 
 impl BTreePageHeader {
     pub fn new(header: &[u8]) -> anyhow::Result<Self> {
         let page_type = PageType::try_from(u8::from_be_bytes([header[0]]))?;
+
+        let right_most_pointer = if matches!(page_type, PageType::InteriorTable)
+            || matches!(page_type, PageType::InteriorIndex)
+        {
+            Some(u32::from_be_bytes([
+                header[8], header[9], header[10], header[11],
+            ]))
+        } else {
+            None
+        };
 
         Ok(Self {
             page_type,
@@ -188,7 +198,7 @@ impl BTreePageHeader {
             ncells: u16::from_be_bytes([header[3], header[4]]),
             cells_start: u16::from_be_bytes([header[5], header[6]]),
             nfragemented_free: u8::from_be_bytes([header[7]]),
-            right_most_pointer: u32::from_be_bytes([header[8], header[9], header[10], header[11]]),
+            right_most_pointer,
         })
     }
 

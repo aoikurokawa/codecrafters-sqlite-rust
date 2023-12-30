@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
 use anyhow::{bail, Result};
-use sqlite_starter_rust::{column::SerialValue, database::Database, page::PageType, sql::Sql};
+use sqlite_starter_rust::{
+    cell::Cell, column::SerialValue, database::Database, page::PageType, sql::Sql,
+};
 
 fn main() -> Result<()> {
     // Parse arguments
@@ -162,13 +164,12 @@ fn main() -> Result<()> {
                                                     let cell_len = page.cell_offsets.len();
 
                                                     for i in 0..cell_len {
-                                                        // eprintln!("{:?}", page.page_type());
-
                                                         if let Some(page_num_left_child) =
                                                             page.cells[i].page_number_left_child
                                                         {
-                                                            page_idxes
-                                                                .push(page_num_left_child as usize);
+                                                            page_idxes.push(
+                                                                page_num_left_child as usize - 1,
+                                                            );
                                                         }
 
                                                         if let Some(page_num_first_overflow) =
@@ -179,7 +180,7 @@ fn main() -> Result<()> {
                                                             );
                                                         }
 
-                                                        if let Some(row_id) = page.cells[i].rowid {
+                                                        if let Some(_row_id) = page.cells[i].rowid {
                                                             index_statement.print_row_id(
                                                                 page.cells[i].record.clone(),
                                                                 &select_statement,
@@ -233,7 +234,8 @@ fn main() -> Result<()> {
                                                                     {
                                                                         page_idxes.push(
                                                                             page_num_left_child
-                                                                                as usize,
+                                                                                as usize
+                                                                                - 1,
                                                                         );
                                                                     }
 
@@ -244,7 +246,8 @@ fn main() -> Result<()> {
                                                                     {
                                                                         page_idxes.push(
                                                                             page_num_first_overflow
-                                                                                as usize,
+                                                                                as usize
+                                                                                - 1,
                                                                         );
                                                                     }
 
@@ -261,6 +264,14 @@ fn main() -> Result<()> {
                                                                                 &mut rowid_set,
                                                                             );
                                                                     }
+                                                                }
+
+                                                                if let Some(num) = page
+                                                                    .btree_header
+                                                                    .right_most_pointer
+                                                                {
+                                                                    page_idxes
+                                                                        .push(num as usize - 1);
                                                                 }
                                                             } else {
                                                                 for i in 0..cell_len {
