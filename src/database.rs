@@ -58,7 +58,7 @@ impl Database {
                     //     page_idxes.push(page_num_first_overflow as usize);
                     // }
 
-                    if let Some(_row_id) = &page.cells[i].record {
+                    if let Some(_record) = &page.cells[i].record {
                         index_statement.print_row_id(
                             page.cells[i].record.clone(),
                             &select_statement,
@@ -89,11 +89,11 @@ impl Database {
                             page_idxes.push(page_num_left_child as usize - 1);
                         }
 
-                        if let Some(page_num_first_overflow) =
-                            page.cells[i].page_number_first_overflow
-                        {
-                            page_idxes.push(page_num_first_overflow as usize - 1);
-                        }
+                        // if let Some(page_num_first_overflow) =
+                        //     page.cells[i].page_number_first_overflow
+                        // {
+                        //     page_idxes.push(page_num_first_overflow as usize - 1);
+                        // }
 
                         if let Some(record) = &page.cells[i].record {
                             select_statement.print_rows(
