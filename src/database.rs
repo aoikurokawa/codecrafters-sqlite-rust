@@ -120,13 +120,14 @@ impl Database {
                             }
                         }
 
-                        if let Some(page_num_first_overflow) =
-                            page.cells[i].page_number_first_overflow
-                        {
-                            page_idxes.push(page_num_first_overflow as usize - 1);
-                        }
+                        if let PageType::LeafTable = page.page_type() {
+                            let rowid = &page.cells[i].rowid.unwrap();
+                            let record = &page.cells[i].record.clone().unwrap();
 
-                        if let Some(record) = &page.cells[i].record {
+                            if ids.binary_search(rowid).is_err() {
+                                continue;
+                            }
+
                             select_statement.print_rows(
                                 record,
                                 &page.cells[i].rowid,
