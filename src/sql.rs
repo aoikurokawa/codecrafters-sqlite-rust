@@ -204,33 +204,30 @@ impl Sql {
     ) {
         let mut values = Vec::new();
 
-        for (_key, value) in self.selection.iter() {
-            for (column_i, column) in record.columns.iter().enumerate() {
-                if column_i == 0 && *column.data() != SerialValue::Null {
-                    break;
-                }
-
-                let rows: Vec<String> = fields
-                    .iter()
-                    .map(|(i, _field)| {
-                        if *i == 0 {
-                            String::new()
-                        } else {
-                            record.columns[*i].data().display()
-                        }
-                    })
-                    .collect();
-
-                let con_row = if fields[0].0 == 0 {
-                    format!("{}{}", rowid.unwrap(), rows.join("|"))
-                } else {
-                    rows.join("|")
-                };
-
-                if !values.contains(&con_row) {
-                    values.push(con_row)
-                }
+        for (column_i, column) in record.columns.iter().enumerate() {
+            if column_i == 0 && *column.data() != SerialValue::Null {
                 break;
+            }
+
+            let rows: Vec<String> = fields
+                .iter()
+                .map(|(i, _field)| {
+                    if *i == 0 {
+                        String::new()
+                    } else {
+                        record.columns[*i].data().display()
+                    }
+                })
+                .collect();
+
+            let con_row = if fields[0].0 == 0 {
+                format!("{}{}", rowid.unwrap(), rows.join("|"))
+            } else {
+                rows.join("|")
+            };
+
+            if !values.contains(&con_row) {
+                values.push(con_row)
             }
         }
 
