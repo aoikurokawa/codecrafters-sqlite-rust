@@ -21,7 +21,6 @@ impl Sql {
     pub fn from_str(query: &str) -> Self {
         let dialect = GenericDialect {};
         let query = Parser::parse_sql(&dialect, query).expect("parse select statement");
-        // let target_table = query.split(" ").last().expect("specify table name");
 
         let mut index_name = None;
         let mut field_name = Vec::new();
@@ -196,7 +195,7 @@ impl Sql {
                     // }
                 }
             }
-            _ => {},
+            _ => {}
         }
     }
 

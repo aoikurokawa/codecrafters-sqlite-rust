@@ -253,14 +253,14 @@ fn main() -> Result<()> {
                                                                         }
 
                                                                         PageType::LeafIndex => {
-                                                                            select_statement
-                                                                                .print_rows(
-                                                                                    page,
-                                                                                    i as u16,
-                                                                                    &fields,
-                                                                                    &mut row_set,
-                                                                                    &mut rowid_set,
-                                                                                );
+                                                                            // select_statement
+                                                                            //     .print_rows(
+                                                                            //         page,
+                                                                            //         i as u16,
+                                                                            //         &fields,
+                                                                            //         &mut row_set,
+                                                                            //         &mut rowid_set,
+                                                                            //     );
                                                                         }
                                                                         PageType::InteriorTable => {
                                                                             if let Ok(idx) = page
@@ -282,14 +282,14 @@ fn main() -> Result<()> {
                                                                                     .push(idx);
                                                                             }
 
-                                                                            select_statement
-                                                                                .print_rows(
-                                                                                    page,
-                                                                                    i as u16,
-                                                                                    &fields,
-                                                                                    &mut row_set,
-                                                                                    &mut rowid_set,
-                                                                                );
+                                                                            // select_statement
+                                                                            //     .print_rows(
+                                                                            //         page,
+                                                                            //         i as u16,
+                                                                            //         &fields,
+                                                                            //         &mut row_set,
+                                                                            //         &mut rowid_set,
+                                                                            //     );
                                                                         }
 
                                                                         PageType::PageError => {
