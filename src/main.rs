@@ -164,41 +164,27 @@ fn main() -> Result<()> {
                                                     for i in 0..cell_len {
                                                         // eprintln!("{:?}", page.page_type());
 
-                                                        match page.page_type() {
-                                                            PageType::LeafIndex => {
-                                                                index_statement.print_row_id(
-                                                                    page,
-                                                                    i as u16,
-                                                                    &select_statement,
-                                                                    &mut rowids,
-                                                                );
-                                                            }
-                                                            PageType::InteriorIndex => {
-                                                                if let Ok(idxes) =
-                                                                    page.read_page_idx(i as u16)
-                                                                {
-                                                                    page_idxes.push(idxes);
-                                                                }
+                                                        if let Some(page_num_left_child) =
+                                                            page.cells[i].page_number_left_child
+                                                        {
+                                                            page_idxes
+                                                                .push(page_num_left_child as usize);
+                                                        }
 
-                                                                index_statement.print_row_id(
-                                                                    page,
-                                                                    i as u16,
-                                                                    &select_statement,
-                                                                    &mut rowids,
-                                                                );
-                                                            }
-                                                            PageType::InteriorTable => {
-                                                                index_statement.print_row_id(
-                                                                    page,
-                                                                    i as u16,
-                                                                    &select_statement,
-                                                                    &mut rowids,
-                                                                );
-                                                            }
-                                                            PageType::PageError => {
-                                                                bail!("Page Type Error");
-                                                            }
-                                                            _ => {}
+                                                        if let Some(page_num_first_overflow) =
+                                                            page.cells[i].page_number_first_overflow
+                                                        {
+                                                            page_idxes.push(
+                                                                page_num_first_overflow as usize,
+                                                            );
+                                                        }
+
+                                                        if let Some(row_id) = page.cells[i].rowid {
+                                                            index_statement.print_row_id(
+                                                                page.cells[i].record.clone(),
+                                                                &select_statement,
+                                                                &mut rowids,
+                                                            );
                                                         }
                                                     }
                                                 }
@@ -240,63 +226,39 @@ fn main() -> Result<()> {
                                                                 .is_empty()
                                                             {
                                                                 for i in 0..cell_len {
-                                                                    match page.page_type() {
-                                                                        PageType::LeafTable => {
-                                                                            select_statement
-                                                                                .print_rows(
-                                                                                    page,
-                                                                                    i,
-                                                                                    &fields,
-                                                                                    &mut row_set,
-                                                                                    &mut rowid_set,
-                                                                                );
-                                                                        }
+                                                                    if let Some(
+                                                                        page_num_left_child,
+                                                                    ) = page.cells[i]
+                                                                        .page_number_left_child
+                                                                    {
+                                                                        page_idxes.push(
+                                                                            page_num_left_child
+                                                                                as usize,
+                                                                        );
+                                                                    }
 
-                                                                        PageType::LeafIndex => {
-                                                                            // select_statement
-                                                                            //     .print_rows(
-                                                                            //         page,
-                                                                            //         i as u16,
-                                                                            //         &fields,
-                                                                            //         &mut row_set,
-                                                                            //         &mut rowid_set,
-                                                                            //     );
-                                                                        }
-                                                                        PageType::InteriorTable => {
-                                                                            if let Ok(idxes) = page
-                                                                                .read_page_idx(
-                                                                                    i as u16,
-                                                                                )
-                                                                            {
-                                                                                page_idxes
-                                                                                    .push(idxes);
-                                                                            }
-                                                                        }
-                                                                        PageType::InteriorIndex => {
-                                                                            if let Ok(idxes) = page
-                                                                                .read_page_idx(
-                                                                                    i as u16,
-                                                                                )
-                                                                            {
-                                                                                page_idxes
-                                                                                    .push(idxes);
-                                                                            }
+                                                                    if let Some(
+                                                                        page_num_first_overflow,
+                                                                    ) = page.cells[i]
+                                                                        .page_number_first_overflow
+                                                                    {
+                                                                        page_idxes.push(
+                                                                            page_num_first_overflow
+                                                                                as usize,
+                                                                        );
+                                                                    }
 
-                                                                            // select_statement
-                                                                            //     .print_rows(
-                                                                            //         page,
-                                                                            //         i as u16,
-                                                                            //         &fields,
-                                                                            //         &mut row_set,
-                                                                            //         &mut rowid_set,
-                                                                            //     );
-                                                                        }
-
-                                                                        PageType::PageError => {
-                                                                            bail!(
-                                                                                "Page Type Error"
+                                                                    if let Some(record) =
+                                                                        &page.cells[i].record
+                                                                    {
+                                                                        select_statement
+                                                                            .print_rows(
+                                                                                page,
+                                                                                i,
+                                                                                &fields,
+                                                                                &mut row_set,
+                                                                                &mut rowid_set,
                                                                             );
-                                                                        }
                                                                     }
                                                                 }
                                                             } else {

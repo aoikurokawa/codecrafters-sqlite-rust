@@ -146,29 +146,24 @@ impl Page {
         }
     }
 
-    pub fn read_page_idx(&self, i: u16) -> anyhow::Result<usize> {
-        if i >= self.btree_header.ncells {
-            bail!("Cell index out of range");
-        }
+    // pub fn read_page_idx(&self, i: u16) -> anyhow::Result<Option<Vec<usize>>> {
+    //     if i >= self.btree_header.ncells {
+    //         bail!("Cell index out of range");
+    //     }
 
-        let offset = self.cell_offsets[i as usize] as usize;
+    //     let offset = self.cell_offsets[i as usize] as usize;
 
-        match self.btree_header.page_type {
-            PageType::InteriorTable | PageType::InteriorIndex => {
-                let idx = offset;
+    //     match self.btree_header.page_type {
+    //         PageType::InteriorTable  => {
+    //
 
-                let pointer = u32::from_be_bytes([
-                    self.buffer[idx],
-                    self.buffer[idx + 1],
-                    self.buffer[idx + 2],
-                    self.buffer[idx + 3],
-                ]);
-
-                Ok(pointer as usize)
-            }
-            _ => todo!(),
-        }
-    }
+    //             Ok(pointer as usize)
+    //         }
+    //         PageType::InteriorIndex => {
+    //         }
+    //         _ => todo!(),
+    //     }
+    // }
 }
 
 #[derive(Debug, Clone)]

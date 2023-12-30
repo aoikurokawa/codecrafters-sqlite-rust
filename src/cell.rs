@@ -62,8 +62,8 @@ impl Cell {
                 ]));
                 idx += 4;
 
-                let (rowid, _bytes_read) = decode_varint(&bytes[idx..])
-                    .context("decode varint for payload size")?;
+                let (rowid, _bytes_read) =
+                    decode_varint(&bytes[idx..]).context("decode varint for payload size")?;
 
                 Ok(Self {
                     page_number_left_child,
