@@ -1,9 +1,10 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, time::Instant};
 
 use anyhow::{bail, Result};
 use sqlite_starter_rust::{column::SerialValue, database::Database, sql::Sql};
 
 fn main() -> Result<()> {
+    let now = Instant::now();
     // Parse arguments
     let args = std::env::args().collect::<Vec<_>>();
     match args.len() {
@@ -166,6 +167,9 @@ fn main() -> Result<()> {
                                 },
                                 _ => {}
                             }
+
+                            let elapsed = now.elapsed();
+                            eprintln!("Elapsed time after finding index: {:.2?}", elapsed);
 
                             let mut rowids: Vec<i64> = rowids.into_iter().collect();
                             rowids.sort_unstable();
