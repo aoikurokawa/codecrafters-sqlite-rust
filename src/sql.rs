@@ -152,53 +152,57 @@ impl Sql {
         row_set: &mut HashSet<String>,
         _rowid_set: &mut HashSet<i64>,
     ) {
-        if let Ok((Some(rowid), Some(record))) = page.read_cell(i) {
-            let mut values = Vec::new();
-            for (_key, value) in self.selection.iter() {
-                for (column_i, column) in record.columns.iter().enumerate() {
-                    if column_i == 0 && *column.data() != SerialValue::Null {
-                        break;
-                    }
+        match page.read_cell(i) {
+            Ok((Some(rowid), Some(record))) => {
+                let mut values = Vec::new();
 
-                    if let SerialValue::String(candidate_value) = column.data() {
-                        if candidate_value == value {
-                            let rows: Vec<String> = fields
-                                .iter()
-                                .map(|(i, _field)| {
-                                    if *i == 0 {
-                                        String::new()
-                                    } else {
-                                        record.columns[*i].data().display()
-                                    }
-                                })
-                                .collect();
-
-                            let con_row = if fields[0].0 == 0 {
-                                format!("{rowid}{}", rows.join("|"))
-                            } else {
-                                rows.join("|")
-                            };
-
-                            if !values.contains(&con_row) {
-                                values.push(con_row)
-                            }
+                for (_key, value) in self.selection.iter() {
+                    for (column_i, column) in record.columns.iter().enumerate() {
+                        if column_i == 0 && *column.data() != SerialValue::Null {
                             break;
+                        }
+
+                        if let SerialValue::String(candidate_value) = column.data() {
+                            if candidate_value == value {
+                                let rows: Vec<String> = fields
+                                    .iter()
+                                    .map(|(i, _field)| {
+                                        if *i == 0 {
+                                            String::new()
+                                        } else {
+                                            record.columns[*i].data().display()
+                                        }
+                                    })
+                                    .collect();
+
+                                let con_row = if fields[0].0 == 0 {
+                                    format!("{rowid}{}", rows.join("|"))
+                                } else {
+                                    rows.join("|")
+                                };
+
+                                if !values.contains(&con_row) {
+                                    values.push(con_row)
+                                }
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            if !values.is_empty() {
-                // if rowid_set.insert(rowid) {
-                row_set.insert(values.join("|"));
-                // }
+                if !values.is_empty() {
+                    // if rowid_set.insert(rowid) {
+                    row_set.insert(values.join("|"));
+                    // }
+                }
             }
+            _ => {},
         }
     }
 
     pub fn print_row_id(&self, page: &Page, i: u16, select_statement: &Sql, rowids: &mut Vec<i64>) {
         match page.read_cell(i) {
-            Ok((Some(rowid), Some(record))) => {
+            Ok((Some(_rowid), Some(record))) => {
                 for (_key, value) in select_statement.selection.iter() {
                     if let SerialValue::String(country) = record.columns[0].data() {
                         if value == country {
