@@ -44,6 +44,11 @@ impl Database {
         rowids: &mut HashSet<i64>,
     ) {
         let mut page_idxes: Vec<usize> = vec![num - 1];
+        let select_query: Vec<&str> = select_statement
+            .selection
+            .values()
+            .map(|val| val.as_str())
+            .collect();
 
         while let Some(page_idx) = page_idxes.pop() {
             if let Some(page) = self.pages.get(page_idx) {
@@ -54,28 +59,25 @@ impl Database {
                             let record = cell.record.clone().unwrap();
 
                             if let SerialValue::String(country) = record.columns[0].data() {
-                                for (_key, value) in select_statement.selection.iter() {
-                                    match country.cmp(value) {
-                                        std::cmp::Ordering::Less => {
-                                            if let Some(num) = page.btree_header.right_most_pointer
-                                            {
-                                                page_idxes.push(num as usize - 1);
-                                            }
+                                match country.as_str().cmp(select_query[0]) {
+                                    std::cmp::Ordering::Less => {
+                                        if let Some(num) = page.btree_header.right_most_pointer {
+                                            page_idxes.push(num as usize - 1);
                                         }
-                                        std::cmp::Ordering::Greater => {
-                                            page_idxes.push(page_num_left_child as usize - 1);
-                                        }
-                                        std::cmp::Ordering::Equal => {
-                                            let num = match record.columns[1].data() {
-                                                SerialValue::I8(num) => *num as i64,
-                                                SerialValue::I16(num) => *num as i64,
-                                                SerialValue::I24(num) => *num as i64,
-                                                SerialValue::I32(num) => *num as i64,
-                                                _ => todo!(),
-                                            };
+                                    }
+                                    std::cmp::Ordering::Greater => {
+                                        page_idxes.push(page_num_left_child as usize - 1);
+                                    }
+                                    std::cmp::Ordering::Equal => {
+                                        let num = match record.columns[1].data() {
+                                            SerialValue::I8(num) => *num as i64,
+                                            SerialValue::I16(num) => *num as i64,
+                                            SerialValue::I24(num) => *num as i64,
+                                            SerialValue::I32(num) => *num as i64,
+                                            _ => todo!(),
+                                        };
 
-                                            rowids.insert(num);
-                                        }
+                                        rowids.insert(num);
                                     }
                                 }
                             };
@@ -87,18 +89,16 @@ impl Database {
                             let record = cell.record.clone().unwrap();
 
                             if let SerialValue::String(country) = record.columns[0].data() {
-                                for (_key, value) in select_statement.selection.iter() {
-                                    if value == country {
-                                        let num = match record.columns[1].data() {
-                                            SerialValue::I8(num) => *num as i64,
-                                            SerialValue::I16(num) => *num as i64,
-                                            SerialValue::I24(num) => *num as i64,
-                                            SerialValue::I32(num) => *num as i64,
-                                            _ => todo!(),
-                                        };
+                                if select_query[0] == country {
+                                    let num = match record.columns[1].data() {
+                                        SerialValue::I8(num) => *num as i64,
+                                        SerialValue::I16(num) => *num as i64,
+                                        SerialValue::I24(num) => *num as i64,
+                                        SerialValue::I32(num) => *num as i64,
+                                        _ => todo!(),
+                                    };
 
-                                        rowids.insert(num);
-                                    }
+                                    rowids.insert(num);
                                 }
                             };
                         }
