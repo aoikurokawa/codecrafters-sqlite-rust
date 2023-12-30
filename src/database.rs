@@ -186,57 +186,17 @@ impl Database {
                                     rowid_set,
                                 );
                             }
-
-                            if ids.is_empty() {
-                                break;
-                            }
-
-                            if let Some(num) = page.btree_header.right_most_pointer {
-                                page_idxes.push(num as usize - 1);
-                            }
                         }
                         _ => {}
                     }
 
-                    // for i in 0..cell_len {
-                    //     if let PageType::InteriorTable = page.page_type() {
-                    //         let page_num_left_child = page.cells[i].page_number_left_child.unwrap();
-                    //         let key = page.cells[i].rowid.unwrap();
+                    //  if ids.is_empty() {
+                    //      break;
+                    //  }
 
-                    //         let split_at = ids.split_at(ids.partition_point(|id| *id < key));
-                    //         let left_ids = split_at.0; // Ids to the left
-                    //         ids = split_at.1; // Ids to the right
-
-                    //         if !left_ids.is_empty() {
-                    //             page_idxes.push(page_num_left_child as usize - 1);
-                    //         }
-                    //     }
-
-                    //     if let PageType::LeafTable = page.page_type() {
-                    //         let rowid = &page.cells[i].rowid.unwrap();
-                    //         let record = &page.cells[i].record.clone().unwrap();
-
-                    //         if ids.binary_search(rowid).is_err() {
-                    //             continue;
-                    //         }
-
-                    //         select_statement.print_rows(
-                    //             record,
-                    //             &page.cells[i].rowid,
-                    //             &fields,
-                    //             row_set,
-                    //             rowid_set,
-                    //         );
-                    //     }
-                    // }
-
-                    if ids.is_empty() {
-                        break;
-                    }
-
-                    if let Some(num) = page.btree_header.right_most_pointer {
-                        page_idxes.push(num as usize - 1);
-                    }
+                    //  if let Some(num) = page.btree_header.right_most_pointer {
+                    //      page_idxes.push(num as usize - 1);
+                    //  }
                 } else {
                     for i in 0..cell_len {
                         if let Ok((_, Some(record))) = page.read_cell(i as u16) {
