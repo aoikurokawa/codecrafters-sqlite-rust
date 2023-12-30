@@ -174,10 +174,10 @@ fn main() -> Result<()> {
                                                                 );
                                                             }
                                                             PageType::InteriorIndex => {
-                                                                if let Ok(idx) =
+                                                                if let Ok(idxes) =
                                                                     page.read_page_idx(i as u16)
                                                                 {
-                                                                    page_idxes.push(idx);
+                                                                    page_idxes.push(idxes);
                                                                 }
 
                                                                 index_statement.print_row_id(
@@ -263,23 +263,23 @@ fn main() -> Result<()> {
                                                                             //     );
                                                                         }
                                                                         PageType::InteriorTable => {
-                                                                            if let Ok(idx) = page
+                                                                            if let Ok(idxes) = page
                                                                                 .read_page_idx(
                                                                                     i as u16,
                                                                                 )
                                                                             {
                                                                                 page_idxes
-                                                                                    .push(idx);
+                                                                                    .push(idxes);
                                                                             }
                                                                         }
                                                                         PageType::InteriorIndex => {
-                                                                            if let Ok(idx) = page
+                                                                            if let Ok(idxes) = page
                                                                                 .read_page_idx(
                                                                                     i as u16,
                                                                                 )
                                                                             {
                                                                                 page_idxes
-                                                                                    .push(idx);
+                                                                                    .push(idxes);
                                                                             }
 
                                                                             // select_statement
@@ -339,7 +339,7 @@ fn main() -> Result<()> {
                                 _ => {}
                             }
                         }
-                        _ => {},
+                        _ => {}
                     }
                 }
             }

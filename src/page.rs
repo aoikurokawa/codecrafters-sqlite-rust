@@ -149,14 +149,14 @@ impl Page {
             PageType::InteriorTable | PageType::InteriorIndex => {
                 let idx = offset;
 
-                let left_child_pointer = u32::from_be_bytes([
+                let pointer = u32::from_be_bytes([
                     self.buffer[idx],
                     self.buffer[idx + 1],
                     self.buffer[idx + 2],
                     self.buffer[idx + 3],
                 ]);
 
-                Ok(left_child_pointer as usize)
+                Ok(pointer as usize)
             }
             _ => todo!(),
         }
