@@ -104,6 +104,7 @@ impl Database {
                 let cell_len = page.cell_offsets.len();
 
                 if !select_statement.selection.is_empty() {
+
                     let mut ids = ids;
 
                     for i in 0..cell_len {
