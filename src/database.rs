@@ -140,10 +140,9 @@ impl Database {
                 let cell_len = page.cell_offsets.len();
 
                 if !select_statement.selection.is_empty() {
-                    let mut ids = ids;
-
                     match page.page_type() {
                         PageType::InteriorTable => {
+                            let mut ids = ids;
                             for i in 0..cell_len {
                                 let page_num_left_child =
                                     page.cells[i].page_number_left_child.unwrap();
@@ -189,14 +188,6 @@ impl Database {
                         }
                         _ => {}
                     }
-
-                    //  if ids.is_empty() {
-                    //      break;
-                    //  }
-
-                    //  if let Some(num) = page.btree_header.right_most_pointer {
-                    //      page_idxes.push(num as usize - 1);
-                    //  }
                 } else {
                     for i in 0..cell_len {
                         if let Ok((_, Some(record))) = page.read_cell(i as u16) {
