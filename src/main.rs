@@ -108,6 +108,7 @@ fn main() -> Result<()> {
             }
         }
         query if query.to_lowercase().starts_with("select") => {
+            eprintln!("select");
             let file_path = &args[1];
             let db = Database::read_file(file_path)?;
             let select_statement = Sql::from_str(query);
