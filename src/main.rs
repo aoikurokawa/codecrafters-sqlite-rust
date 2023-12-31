@@ -109,8 +109,6 @@ fn main() -> Result<()> {
                         (_, Some(record)) => {
                             let mut rowids = HashSet::new();
 
-                            eprintln!("{:?}", record.columns);
-
                             match record.columns[0].data() {
                                 SerialValue::String(str) => match str.as_str() {
                                     "index" => {
