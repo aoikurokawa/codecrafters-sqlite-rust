@@ -13,14 +13,14 @@ pub struct Page {
 }
 
 impl Page {
-    pub fn new(idx: usize, header: DbHeader, b_tree_page: &[u8]) -> Self {
-        let mut db_header = None;
+    pub fn new(idx: usize, db_header: Option<DbHeader>, b_tree_page: &[u8]) -> Self {
+        // let mut db_header = None;
         let btree_header;
         let mut buffer = vec![];
         buffer.extend_from_slice(b_tree_page);
 
         if idx == 0 {
-            db_header = Some(header.clone());
+            // db_header = Some(header.clone());
             btree_header = BTreePageHeader::new(&b_tree_page[100..112]).unwrap();
             buffer.drain(0..100);
         } else {
