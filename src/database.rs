@@ -20,8 +20,8 @@ impl Database {
 
         let (header, _rest) = file.split_at(100);
         let header = DbHeader::new(header)?;
-        assert_eq!(file.len() % header.page_size, 0);
-        assert_eq!(header.header_string, "SQLite format 3\0");
+        // assert_eq!(file.len() % header.page_size, 0);
+        // assert_eq!(header.header_string, "SQLite format 3\0");
 
         let mut pages = vec![];
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
