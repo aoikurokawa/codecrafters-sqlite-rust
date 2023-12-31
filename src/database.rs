@@ -23,7 +23,7 @@ impl Database {
         assert_eq!(file.len() % header.page_size, 0);
         assert_eq!(header.header_string, "SQLite format 3\0");
 
-        eprintln!("Total page: {}", file.len() / header.page_size);
+        eprintln!("Total page: {}", file.len() / header.page_size); // 252249
 
         let mut pages = vec![]; // 64023
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
