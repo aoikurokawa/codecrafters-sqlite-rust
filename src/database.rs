@@ -16,7 +16,6 @@ pub struct Database {
 
 impl Database {
     pub fn read_file(path: impl AsRef<Path>) -> anyhow::Result<Self> {
-        eprintln!("reading file");
         let file = fs::read(path)?;
 
         let (header, _rest) = file.split_at(100);
@@ -25,7 +24,7 @@ impl Database {
         assert_eq!(header.header_string, "SQLite format 3\0");
 
         let mut pages = vec![];
-        eprintln!("creating a page");
+        eprintln!("File size: {}", file.len());
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
             let page = Page::new(page_i, header.clone(), b_tree_page);
             pages.push(page);
