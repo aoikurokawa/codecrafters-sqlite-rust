@@ -13,60 +13,52 @@ fn main() -> Result<()> {
         _ => {}
     }
 
+    let file_path = &args[1];
+    let db = Database::read_file(file_path)?;
     // Parse command and act accordingly
     let command = &args[2];
     match command.as_str() {
         ".dbinfo" => {
-            let file_path = &args[1];
-
-            let db = Database::read_file(file_path)?;
             println!("database page size: {}", db.page_size());
 
             if let Some(first_page) = db.pages.get(0) {
                 println!("number of tables: {}", first_page.btree_header.ncells());
             }
         }
-        ".tables" => {
-            let file_path = &args[1];
-
-            let db = Database::read_file(file_path)?;
-            match db.pages.get(0) {
-                Some(first_page) => {
-                    let mut tables = String::new();
-                    for i in 0..first_page.btree_header.ncells() {
-                        if let Ok((_, Some(record))) = first_page.read_cell(i) {
-                            match record.columns[0].data() {
-                                SerialValue::String(ref str) => {
-                                    if str != "table" {
-                                        continue;
-                                    }
+        ".tables" => match db.pages.get(0) {
+            Some(first_page) => {
+                let mut tables = String::new();
+                for i in 0..first_page.btree_header.ncells() {
+                    if let Ok((_, Some(record))) = first_page.read_cell(i) {
+                        match record.columns[0].data() {
+                            SerialValue::String(ref str) => {
+                                if str != "table" {
+                                    continue;
                                 }
-                                _ => {}
                             }
+                            _ => {}
+                        }
 
-                            let tbl_name = match record.columns[2].data() {
-                                SerialValue::String(ref str) => {
-                                    if str == "sqlite_sequence" {
-                                        continue;
-                                    }
-                                    &str
+                        let tbl_name = match record.columns[2].data() {
+                            SerialValue::String(ref str) => {
+                                if str == "sqlite_sequence" {
+                                    continue;
                                 }
-                                _ => "",
-                            };
-
-                            tables.push_str(&format!("{} ", tbl_name));
+                                &str
+                            }
+                            _ => "",
                         };
-                    }
-                    println!("{tables}");
+
+                        tables.push_str(&format!("{} ", tbl_name));
+                    };
                 }
-                None => eprintln!("can not read first page"),
+                println!("{tables}");
             }
-        }
+            None => eprintln!("can not read first page"),
+        },
         query if query.to_lowercase().starts_with("select count(*)") => {
-            let file_path = &args[1];
             let select_statement = Sql::from_str(query);
 
-            let db = Database::read_file(file_path)?;
             if let Some(first_page) = db.pages.get(0) {
                 for i in 0..first_page.btree_header.ncells() {
                     if let Ok((_, Some(record))) = first_page.read_cell(i) {
@@ -108,8 +100,6 @@ fn main() -> Result<()> {
             }
         }
         query if query.to_lowercase().starts_with("select") => {
-            let file_path = &args[1];
-            let db = Database::read_file(file_path)?;
             let select_statement = Sql::from_str(query);
 
             eprintln!("read database");
