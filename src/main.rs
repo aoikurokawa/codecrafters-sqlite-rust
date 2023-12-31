@@ -102,7 +102,6 @@ fn main() -> Result<()> {
         query if query.to_lowercase().starts_with("select") => {
             let select_statement = Sql::from_str(query);
 
-            eprintln!("read database");
             if let Some(first_page) = db.pages.get(0) {
                 for i in (0..first_page.btree_header.ncells()).rev() {
                     match first_page.read_cell(i)? {
@@ -112,7 +111,6 @@ fn main() -> Result<()> {
                             match record.columns[0].data() {
                                 SerialValue::String(str) => match str.as_str() {
                                     "index" => {
-                                        eprintln!("reading index");
                                         let index_statement =
                                             Sql::from_str(&record.columns[4].data().display());
                                         if let SerialValue::I8(num) = record.columns[3].data() {
@@ -129,9 +127,6 @@ fn main() -> Result<()> {
                                 },
                                 _ => {}
                             }
-
-                            let elapsed = now.elapsed();
-                            eprintln!("Elapsed time after finding index: {:.2?}", elapsed);
 
                             let mut rowids: Vec<i64> = rowids.into_iter().collect();
                             rowids.sort_unstable();

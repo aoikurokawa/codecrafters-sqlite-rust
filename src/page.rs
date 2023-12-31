@@ -1,6 +1,6 @@
 use anyhow::{bail, Context};
 
-use crate::{cell::Cell, database::DbHeader, decode_varint, record::Record};
+use crate::{database::DbHeader, decode_varint, record::Record};
 
 #[derive(Debug, Clone)]
 pub struct Page {

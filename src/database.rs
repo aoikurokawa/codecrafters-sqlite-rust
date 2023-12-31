@@ -1,11 +1,8 @@
 use std::{
     collections::HashSet,
-    fs::{self, File},
-    io::{Read, Seek, SeekFrom},
+    fs::{self},
     path::Path,
 };
-
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
     cell::Cell,
