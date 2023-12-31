@@ -26,3 +26,4 @@ peg = "0.7.0"        # for parsing
 regex = "1.5.4"      # for parsing
 thiserror = "1.0.32" # error handling
 sqlparser = "0.41.0"
+rayon = "1.8.0"

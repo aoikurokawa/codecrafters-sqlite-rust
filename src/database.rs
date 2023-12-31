@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs, path::Path, sync::mpsc, thread};
+use std::{collections::HashSet, fs, path::Path};
 
 use crate::{
     column::SerialValue,
@@ -23,30 +23,11 @@ impl Database {
         assert_eq!(file.len() % header.page_size, 0);
         assert_eq!(header.header_string, "SQLite format 3\0");
 
-        let (sender, receiver) = mpsc::channel();
-        let mut handles = vec![];
-
+        let mut pages = vec![];
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
-            let sender = sender.clone();
-            let header = header.clone();
-            let b_tree_page = b_tree_page.to_vec();
-
-            let handle = thread::spawn(move || {
-                let page = Page::new(page_i, header, &b_tree_page);
-                sender.send(page).unwrap();
-            });
-
-            handles.push(handle);
+            let page = Page::new(page_i, header.clone(), b_tree_page);
+            pages.push(page);
         }
-
-        for handle in handles {
-            handle.join().unwrap();
-        }
-
-        let pages = receiver
-            .iter()
-            .take(file.len() / header.page_size)
-            .collect();
 
         Ok(Self { header, pages })
     }
