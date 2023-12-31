@@ -25,6 +25,8 @@ impl Database {
 
         let mut pages = vec![];
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
+            eprintln!("{page_i}");
+
             let page = if page_i == 0 {
                 Page::new(page_i, Some(header.clone()), b_tree_page)
             } else {
