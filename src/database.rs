@@ -61,12 +61,12 @@ impl Database {
                             if let SerialValue::String(country) = record.columns[0].data() {
                                 match country.as_str().cmp(select_query[0]) {
                                     std::cmp::Ordering::Less => {
+                                        page_idxes.push(page_num_left_child as usize - 1);
+                                    }
+                                    std::cmp::Ordering::Greater => {
                                         if let Some(num) = page.btree_header.right_most_pointer {
                                             page_idxes.push(num as usize - 1);
                                         }
-                                    }
-                                    std::cmp::Ordering::Greater => {
-                                        page_idxes.push(page_num_left_child as usize - 1);
                                     }
                                     std::cmp::Ordering::Equal => {
                                         let num = match record.columns[1].data() {
