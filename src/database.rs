@@ -16,6 +16,7 @@ pub struct Database {
 
 impl Database {
     pub fn read_file(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        eprintln!("reading file");
         let file = fs::read(path)?;
 
         let (header, _rest) = file.split_at(100);
