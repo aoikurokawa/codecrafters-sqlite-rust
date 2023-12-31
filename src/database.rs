@@ -23,10 +23,10 @@ impl Database {
         assert_eq!(file.len() % header.page_size, 0);
         assert_eq!(header.header_string, "SQLite format 3\0");
 
-        let mut pages = vec![];
-        for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
-            eprintln!("{page_i}");
+        eprintln!("Total page: {}", file.len() / header.page_size);
 
+        let mut pages = vec![]; // 64023
+        for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
             let page = if page_i == 0 {
                 Page::new(page_i, Some(header.clone()), b_tree_page)
             } else {
