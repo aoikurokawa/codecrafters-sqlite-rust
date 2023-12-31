@@ -4,12 +4,11 @@ use crate::{cell::Cell, database::DbHeader, decode_varint, record::Record};
 
 #[derive(Debug, Clone)]
 pub struct Page {
-    pub index: usize,
     pub db_header: Option<DbHeader>,
     pub btree_header: BTreePageHeader,
     pub(crate) buffer: Vec<u8>,
     pub cell_offsets: Vec<u16>,
-    pub cells: Vec<Cell>,
+    // pub cells: Vec<Cell>,
 }
 
 impl Page {
@@ -33,25 +32,24 @@ impl Page {
         };
 
         let ncells = btree_header.ncells as usize;
-        let mut cells = Vec::new();
+        // let mut cells = Vec::new();
         let mut cell_offsets = vec![0; ncells];
         for i in 0..ncells {
             let offset = header_size + i * 2;
             let num = u16::from_be_bytes([buffer[offset], buffer[offset + 1]]);
             cell_offsets[i] = num;
 
-            let cell = Cell::from_bytes(&btree_header.page_type, num as usize, &b_tree_page)
-                .expect("construct a cell");
-            cells.push(cell);
+            // let cell = Cell::from_bytes(&btree_header.page_type, num as usize, &b_tree_page)
+            //     .expect("construct a cell");
+            // cells.push(cell);
         }
 
         Self {
-            index: idx,
             db_header,
             btree_header,
             buffer: b_tree_page.to_vec(),
             cell_offsets,
-            cells,
+            // cells,
         }
     }
 

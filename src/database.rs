@@ -1,6 +1,14 @@
-use std::{collections::HashSet, fs, path::Path};
+use std::{
+    collections::HashSet,
+    fs::{self, File},
+    io::{Read, Seek, SeekFrom},
+    path::Path,
+};
+
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
+    cell::Cell,
     column::SerialValue,
     page::{Page, PageType},
     record::Record,
@@ -18,12 +26,10 @@ impl Database {
     pub fn read_file(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let file = fs::read(path)?;
 
-        let (header, _rest) = file.split_at(100);
-        let header = DbHeader::new(header)?;
+        // let (header, _rest) = file.split_at(100);
+        let header = DbHeader::new(&file[0..100])?;
         assert_eq!(file.len() % header.page_size, 0);
         assert_eq!(header.header_string, "SQLite format 3\0");
-
-        eprintln!("Total page: {}", file.len() / header.page_size); // 252249
 
         let mut pages = vec![]; // 64023
         for (page_i, b_tree_page) in file.chunks(header.page_size).enumerate() {
@@ -58,9 +64,17 @@ impl Database {
 
         while let Some(page_idx) = page_idxes.pop() {
             if let Some(page) = self.pages.get(page_idx) {
+                let cells: Vec<Cell> = page
+                    .cell_offsets
+                    .iter()
+                    .map(|offset| {
+                        Cell::from_bytes(page.page_type(), *offset as usize, &page.buffer)
+                            .expect("construct cell")
+                    })
+                    .collect();
                 match page.page_type() {
                     PageType::InteriorIndex => {
-                        for cell in page.cells.iter() {
+                        for cell in cells.iter() {
                             let page_num_left_child = cell.page_number_left_child.unwrap();
                             let record = cell.record.clone().unwrap();
 
@@ -91,7 +105,7 @@ impl Database {
                     }
 
                     PageType::LeafIndex => {
-                        for cell in page.cells.iter() {
+                        for cell in cells.iter() {
                             let record = cell.record.clone().unwrap();
 
                             if let SerialValue::String(country) = record.columns[0].data() {
@@ -126,18 +140,26 @@ impl Database {
         let mut page_idxes: Vec<usize> = vec![num - 1];
         while let Some(page_idx) = page_idxes.pop() {
             if let Some(page) = self.pages.get(page_idx) {
+                let cells: Vec<Cell> = page
+                    .cell_offsets
+                    .iter()
+                    .map(|offset| {
+                        Cell::from_bytes(page.page_type(), *offset as usize, &page.buffer)
+                            .expect("construct cell")
+                    })
+                    .collect();
                 let cell_len = page.cell_offsets.len();
 
                 if !select_statement.selection.is_empty() {
                     for i in 0..cell_len {
-                        if let Some(page_num_left_child) = page.cells[i].page_number_left_child {
+                        if let Some(page_num_left_child) = cells[i].page_number_left_child {
                             page_idxes.push(page_num_left_child as usize - 1);
                         }
 
-                        if let Some(record) = &page.cells[i].record {
+                        if let Some(record) = &cells[i].record {
                             select_statement.print_rows(
                                 record,
-                                &page.cells[i].rowid,
+                                &cells[i].rowid,
                                 &fields,
                                 row_set,
                                 rowid_set,
@@ -176,6 +198,14 @@ impl Database {
         let mut page_idxes: Vec<usize> = vec![num - 1];
         while let Some(page_idx) = page_idxes.pop() {
             if let Some(page) = self.pages.get(page_idx) {
+                let cells: Vec<Cell> = page
+                    .cell_offsets
+                    .iter()
+                    .map(|offset| {
+                        Cell::from_bytes(page.page_type(), *offset as usize, &page.buffer)
+                            .expect("construct cell")
+                    })
+                    .collect();
                 let cell_len = page.cell_offsets.len();
 
                 if !select_statement.selection.is_empty() {
@@ -183,9 +213,8 @@ impl Database {
                         PageType::InteriorTable => {
                             let mut ids = ids;
                             for i in 0..cell_len {
-                                let page_num_left_child =
-                                    page.cells[i].page_number_left_child.unwrap();
-                                let key = page.cells[i].rowid.unwrap();
+                                let page_num_left_child = cells[i].page_number_left_child.unwrap();
+                                let key = cells[i].rowid.unwrap();
 
                                 let split_at = ids.split_at(ids.partition_point(|id| *id < key));
                                 let left_ids = split_at.0; // Ids to the left
@@ -205,8 +234,7 @@ impl Database {
                             }
                         }
                         PageType::LeafTable => {
-                            let records: Vec<(i64, Record)> = page
-                                .cells
+                            let records: Vec<(i64, Record)> = cells
                                 .iter()
                                 .filter(|cell| {
                                     let rowid = cell.rowid.unwrap();
