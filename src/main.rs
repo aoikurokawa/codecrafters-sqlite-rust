@@ -62,37 +62,6 @@ fn main() -> Result<()> {
                 None => eprintln!("can not read first page"),
             }
         }
-        ".index" => {
-            let file_path = &args[1];
-
-            let db = Database::read_file(file_path)?;
-            match db.pages.get(0) {
-                Some(first_page) => {
-                    for i in 0..first_page.btree_header.ncells() {
-                        if let Ok((_, Some(record))) = first_page.read_cell(i) {
-                            match record.columns[0].data() {
-                                SerialValue::String(ref str) => {
-                                    if str == "index" {
-                                        match record.columns[3].data() {
-                                            SerialValue::I8(num) => {
-                                                if let Some(page) = db.pages.get(*num as usize - 1)
-                                                {
-                                                    let cell_len = page.cell_offsets.len();
-                                                    println!("{:?}", cell_len);
-                                                }
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        };
-                    }
-                }
-                None => eprintln!("can not read first page"),
-            }
-        }
         query if query.to_lowercase().starts_with("select count(*)") => {
             let file_path = &args[1];
             let select_statement = Sql::from_str(query);
@@ -152,6 +121,7 @@ fn main() -> Result<()> {
                             match record.columns[0].data() {
                                 SerialValue::String(str) => match str.as_str() {
                                     "index" => {
+                                        eprintln!("reading index");
                                         let index_statement =
                                             Sql::from_str(&record.columns[4].data().display());
                                         if let SerialValue::I8(num) = record.columns[3].data() {
@@ -162,6 +132,7 @@ fn main() -> Result<()> {
                                                 &mut rowids,
                                             );
                                         }
+                                        continue;
                                     }
                                     _ => {}
                                 },
