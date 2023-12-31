@@ -113,7 +113,7 @@ fn main() -> Result<()> {
             let select_statement = Sql::from_str(query);
 
             if let Some(first_page) = db.pages.get(0) {
-                for i in 0..first_page.btree_header.ncells() {
+                for i in (0..first_page.btree_header.ncells()).rev() {
                     match first_page.read_cell(i)? {
                         (_, Some(record)) => {
                             let mut rowids = HashSet::new();
